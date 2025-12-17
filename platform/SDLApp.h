@@ -4,8 +4,10 @@
 class SDLApp{
     public:
         bool Init();
-        void Run();
         void Shutdown();
+        bool IsRunning() const;
+        void HandleEvents();
+        void render();
     private:
         SDL_Window* window = nullptr;
         SDL_Renderer* renderer = nullptr;

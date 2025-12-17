@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_subdirectory(engine)
 add_subdirectory(platform)
+add_subdirectory(demo)
 
 add_executable(PhysicsDemo main.cpp)
-target_link_libraries(PhysicsDemo engine platform)
+target_link_libraries(PhysicsDemo engine platform demo)

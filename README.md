@@ -1,7 +1,7 @@
 # 🎮 Ngen2D - 2D Physics Engine
 
 [![C++17](https://img.shields.io/badge/C++-17-blue.svg)](https://isocpp.org/)
-[![CMake](https://img.shields.io/badge/CMake-3.16+-green.svg)](https://cmake.org/)
+[![CMake](https://img.shields.io/badge/CMake-3.28+-green.svg)](https://cmake.org/)
 [![SDL2](https://img.shields.io/badge/SDL2-2.0+-orange.svg)](https://www.libsdl.org/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -183,7 +183,7 @@ int main() {
 - [x] Vector2 mathematics
 - [x] Rigid body dynamics
 - [x] Basic SDL2 integration
-- [ ] Fix normalize() memory leak
+- [x] Fix normalize() memory leak
 
 ### Phase 2: Collision System 🚧
 - [ ] AABB (Axis-Aligned Bounding Box)

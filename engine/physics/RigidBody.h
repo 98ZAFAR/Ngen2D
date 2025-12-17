@@ -14,4 +14,5 @@ class RigidBody{
 
     void ApplyForce(const Vector2& f);
     void Integrate(float deltaTime);
+    void ApplyGravity();
 };

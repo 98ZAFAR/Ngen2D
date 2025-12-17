@@ -1,4 +1,5 @@
 #include "RigidBody.h"
+#include "../core/Config.h"
 
 RigidBody::RigidBody(float m):mass(m), position(), velocity(), force(){
     if(mass > 0){
@@ -21,4 +22,9 @@ void RigidBody::Integrate(float deltaTime){
     position += velocity * deltaTime;
     // Clear force
     force = Vector2(0,0);
+}
+
+void RigidBody::ApplyGravity(){
+    if(inverseMass<=0.0f) return;
+    ApplyForce(Vector2(0, Config::GRAVITY * mass));
 }
