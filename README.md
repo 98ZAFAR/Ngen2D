@@ -130,33 +130,11 @@ mingw32-make
 copy C:\SDL2\lib\x86\SDL2.dll .
 
 # Run the demo
-├── .gitignore                  # Git ignore rules
-│
-├── engine/                     # Core physics engine
-│   ├── CMakeLists.txt         # Engine library definition
-│   ├── math/
-│   │   ├── Vector2.h          # Vector2 interface
-│   │   └── Vector2.cpp        # Vector2 implementation
-│   ├── physics/
-│   │   ├── RigidBody.h        # Rigid body interface
-│   │   ├── RigidBody.cpp      # Physics integration logic
-│   │   ├── PhysicsWorld.h     # Physics world manager interface
-│   │   └── PhysicsWorld.cpp   # Physics world implementation
-│   ├── shapes/                # Shape primitives (empty for now)
-│   └── core/                  # Core systems (empty for now)
-│
-├── platform/                   # Platform abstraction
-│   ├── CMakeLists.txt         # Platform library definition
-│   ├── SDLApp.h               # SDL application interface
-│   └── SDLApp.cpp             # SDL implementation with rendering
-│
-├── Current Demo
-
-The project includes a working physics demo in the `Sandbox` class. When you run `PhysicsDemo.exe`, you'll see:
+The project includes a working physics demo in the `Sandbox` class. When you run `PhysicsDemo.exe`, you will see:
 - A physics simulation with a box
 - Real-time rendering using SDL2
 - Basic physics world management
-
+```
 ### Example Code
 
 ```cpp
@@ -183,14 +161,8 @@ int main(int argc, char* argv[]) {
 
     app.Shutdown();
     return 0;
-}ompleted)
-- [x] Vector2 mathematics
-- [x] Rigid body dynamics
-- [x] Physics World system
-- [x] Basic SDL2 integration with rendering
-- [x] Working demo application
-- [x] Windows build support
-```cpp
+}
+
 #include "engine/physics/PhysicsWorld.h"
 #include "engine/physics/RigidBody.h"
 
@@ -207,9 +179,7 @@ world.AddBody(&ball);
 // In update loop
 Vector2 gravity(0, 9.8f);
 ball.ApplyForce(gravity * ball.mass);
-world.Step(deltaTime);  // Update all bodies   └── SDLApp.cpp             # SDL implementation
-│
-└── build/                      # Generated build artifacts (git-ignored)
+world.Step(deltaTime);  // Update all bodies 
 ```
 
 ## 🎯 Usage
