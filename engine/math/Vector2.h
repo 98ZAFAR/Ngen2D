@@ -34,14 +34,14 @@ struct Vector2{
     }
 
     // Calculate Magnitude
-    float magnitude() const{
+    float length() const{
         return std::sqrt(x*x + y*y);
     }
 
     // Normalize the vector
-    Vector2& normalize(){
-        float mgn = magnitude();
-        if(mgn>0) return *new Vector2(x/mgn, y/mgn);
-        return *this;
+    Vector2 normalize() const {
+        float mgn = length();
+        if(mgn>0) return Vector2(x/mgn, y/mgn);
+        return Vector2(0, 0);
     }
 };
