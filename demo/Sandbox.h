@@ -5,6 +5,7 @@ class Sandbox{
     public:
         Sandbox();
         void Update();
+        RigidBody* GetBox();
     private:
         // Sandbox specific data and methods would go here
         PhysicsWorld world;

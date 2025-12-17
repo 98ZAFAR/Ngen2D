@@ -36,11 +36,17 @@ void SDLApp::HandleEvents(){
     }
 }
 
-void SDLApp::render(){
+void SDLApp::Render(){
+    SDL_RenderPresent(renderer);
+}
+
+void SDLApp::Clear(){
     SDL_SetRenderDrawColor(renderer, 20, 20, 20, 255);
     SDL_RenderClear(renderer);
+}
 
-    // Rendering code would go here
-
-    SDL_RenderPresent(renderer);
+void SDLApp::DrawRect(float x, float y, int w, int h){
+    SDL_Rect rect = {static_cast<int>(x - w / 2), static_cast<int>(y - h / 2), w, h};
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_RenderFillRect(renderer, &rect);
 }

@@ -7,7 +7,9 @@ class SDLApp{
         void Shutdown();
         bool IsRunning() const;
         void HandleEvents();
-        void render();
+        void Render();
+        void DrawRect(float x, float y, int w, int h);
+        void Clear();
     private:
         SDL_Window* window = nullptr;
         SDL_Renderer* renderer = nullptr;

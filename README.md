@@ -23,7 +23,9 @@ A lightweight, modular 2D physics engine written in modern C++ with SDL2 renderi
 ### Current Implementation
 - ✅ **2D Vector Mathematics**: Complete vector operations (addition, subtraction, scalar multiplication, dot product, normalization)
 - ✅ **Rigid Body Dynamics**: Position-based physics with force accumulation and Euler integration
-- ✅ **SDL2 Integration**: Window management, rendering pipeline, and event handling
+- ✅ **Physics World System**: Centralized physics simulation with body management
+- ✅ **SDL2 Integration**: Window management, rendering pipeline, and event handling with rectangle drawing
+- ✅ **Demo System**: Working sandbox demo with physics visualization
 - ✅ **Modular Architecture**: Separated engine logic from platform-specific code
 
 ### In Development
@@ -44,14 +46,16 @@ Ngen2D/
 │   │
 │   ├── physics/        # Physics simulation
 │   │   ├── RigidBody   # Dynamic body with mass and forces
-│   │   └── ...         # [Future: World, Collider, Constraints]
+│   │   └── PhysicsWorld # Physics simulation manager
 │   │
+│   ├── shapes/         # Shape primitives [Coming soon]
 │   └── core/           # [Future: Object lifecycle, Memory management]
 │
 ├── platform/           # Platform-specific rendering/windowing
 │   └── SDLApp          # SDL2 window and renderer wrapper
 │
-├── demo/               # [Future: Example scenes and tests]
+├── demo/               # Example scenes and tests
+│   └── Sandbox         # Working physics demonstration
 │
 └── main.cpp            # Application entry point
 ```
@@ -60,10 +64,10 @@ Ngen2D/
 
 | Component | Purpose | Dependencies |
 |-----------|---------|--------------|
-| **Vector2** | 2D math operations for physics calculations | None (stdlib only) |
-| **RigidBody** | Stores physical properties and integrates motion | Vector2 |
-| **SDLApp** | Manages window, renderer, and event loop | SDL2 |
-| **PhysicsDemo** | Entry point that wires everything together | engine, platform |
+| **PhysicsWorld** | Manages all physics bodies and simulation stepping | RigidBody |
+| **SDLApp** | Manages window, renderer, event loop, and drawing | SDL2 |
+| **Sandbox** | Demo scene showcasing physics simulation | PhysicsWorld, RigidBody |
+| **PhysicsDemo** | Entry point that wires everything together | engine, platform, demo
 
 ## 📦 Prerequisites
 
@@ -81,16 +85,14 @@ sudo apt-get install libsdl2-dev
 **macOS (Homebrew):**
 ```bash
 brew install sdl2
-```
-
-**Windows (vcpkg):**
-```bash
+```:**
+1. Download SDL2 development libraries from [libsdl.org](https://github.com/libsdl-org/SDL/releases)
+2. Extract to `C:\SDL2`
+3. SDL2.dll will be needed alongside the executablebash
 vcpkg install sdl2:x64-windows
 ```
 
-## 🔨 Building
-
-### Quick Start
+## Linux/macOS
 
 ```bash
 # Clone the repository
@@ -101,45 +103,111 @@ cd Ngen2D
 mkdir build && cd build
 
 # Configure and build
-cmake ..
-cmake --build .
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make
 
 # Run the demo
-./PhysicsDemo          # Linux/macOS
-.\PhysicsDemo.exe      # Windows
+./PhysicsDemo
 ```
 
-### CMake Options
+### Windows (MinGW)
 
-```bash
-# Debug build
-cmake -DCMAKE_BUILD_TYPE=Debug ..
+```powershell
+# Navigate to project
+cd Ngen2D
 
-# Release build with optimizations
-cmake -DCMAKE_BUILD_TYPE=Release ..
-```
+# Create build directory
+mkdir build
+cd build
 
-## 📁 Project Structure
+# Configure with MinGW
+cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="C:/SDL2"
 
-```
-Ngen2D/
-├── CMakeLists.txt              # Root build configuration
-├── main.cpp                    # Application entry point
-├── README.md                   # This file
+# Build
+mingw32-make
+
+# Copy SDL2.dll
+copy C:\SDL2\lib\x86\SDL2.dll .
+
+# Run the demo
+├── .gitignore                  # Git ignore rules
 │
 ├── engine/                     # Core physics engine
 │   ├── CMakeLists.txt         # Engine library definition
 │   ├── math/
 │   │   ├── Vector2.h          # Vector2 interface
 │   │   └── Vector2.cpp        # Vector2 implementation
-│   └── physics/
-│       ├── RigidBody.h        # Rigid body interface
-│       └── RigidBody.cpp      # Physics integration logic
+│   ├── physics/
+│   │   ├── RigidBody.h        # Rigid body interface
+│   │   ├── RigidBody.cpp      # Physics integration logic
+│   │   ├── PhysicsWorld.h     # Physics world manager interface
+│   │   └── PhysicsWorld.cpp   # Physics world implementation
+│   ├── shapes/                # Shape primitives (empty for now)
+│   └── core/                  # Core systems (empty for now)
 │
 ├── platform/                   # Platform abstraction
 │   ├── CMakeLists.txt         # Platform library definition
 │   ├── SDLApp.h               # SDL application interface
-│   └── SDLApp.cpp             # SDL implementation
+│   └── SDLApp.cpp             # SDL implementation with rendering
+│
+├── Current Demo
+
+The project includes a working physics demo in the `Sandbox` class. When you run `PhysicsDemo.exe`, you'll see:
+- A physics simulation with a box
+- Real-time rendering using SDL2
+- Basic physics world management
+
+### Example Code
+
+```cpp
+#include "platform/SDLApp.h"
+#include "demo/Sandbox.h"
+
+int main(int argc, char* argv[]) {
+    SDLApp app;
+    Sandbox sandbox;
+
+    if(!app.Init())
+        return -1;
+
+    // Main game loop
+    while(app.IsRunning()) {
+        app.HandleEvents();      // Process input
+        sandbox.Update();        // Update physics
+        
+        app.Clear();             // Clear screen
+        RigidBody* box = sandbox.GetBox();
+        app.DrawRect(box->position.x, box->position.y, 50, 50);  // Draw box
+        app.Render();            // Present frame
+    }
+
+    app.Shutdown();
+    return 0;
+}ompleted)
+- [x] Vector2 mathematics
+- [x] Rigid body dynamics
+- [x] Physics World system
+- [x] Basic SDL2 integration with rendering
+- [x] Working demo application
+- [x] Windows build support
+```cpp
+#include "engine/physics/PhysicsWorld.h"
+#include "engine/physics/RigidBody.h"
+
+// Create a physics world
+PhysicsWorld world;
+
+// Create a physics body
+RigidBody ball(1.0f);  // 1kg mass
+ball.position = Vector2(400, 300);
+
+// Add to world
+world.AddBody(&ball);
+
+// In update loop
+Vector2 gravity(0, 9.8f);
+ball.ApplyForce(gravity * ball.mass);
+world.Step(deltaTime);  // Update all bodies   └── SDLApp.cpp             # SDL implementation
 │
 └── build/                      # Generated build artifacts (git-ignored)
 ```
