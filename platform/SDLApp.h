@@ -8,7 +8,7 @@ class SDLApp{
         bool IsRunning() const;
         void HandleEvents();
         void Render();
-        void DrawRect(float x, float y, int w, int h);
+        void DrawRect(float x, float y, int w, int h, SDL_Color color);
         void Clear();
     private:
         SDL_Window* window = nullptr;

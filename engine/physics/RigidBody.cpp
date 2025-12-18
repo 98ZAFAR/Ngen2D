@@ -28,3 +28,8 @@ void RigidBody::ApplyGravity(){
     if(inverseMass<=0.0f) return;
     ApplyForce(Vector2(0, Config::GRAVITY * mass));
 }
+
+void RigidBody::ApplyTorque(float torque){
+    // Placeholder for torque application
+    // In a full implementation, this would affect angular velocity and rotation
+}

@@ -1,4 +1,4 @@
-# 🎮 Ngen2D - 2D Physics Engine
+# 🎮 Ngen2D - Native Engine 2D
 
 [![C++17](https://img.shields.io/badge/C++-17-blue.svg)](https://isocpp.org/)
 [![CMake](https://img.shields.io/badge/CMake-3.28+-green.svg)](https://cmake.org/)
@@ -27,9 +27,12 @@ A lightweight, modular 2D physics engine written in modern C++ with SDL2 renderi
 - ✅ **SDL2 Integration**: Window management, rendering pipeline, and event handling with rectangle drawing
 - ✅ **Demo System**: Working sandbox demo with physics visualization
 - ✅ **Modular Architecture**: Separated engine logic from platform-specific code
+- ✅ **AABB Collision Detection**: Axis-Aligned Bounding Box collision detection system
+- ✅ **Mass-Based Collision Resolution**: Physically accurate collision response respecting object masses and infinite mass support
 
 ### In Development
-- 🚧 Collision detection (AABB, Circle, SAT)
+- 🚧 Circle collision detection
+- 🚧 SAT (Separating Axis Theorem) for polygon collision
 - 🚧 Shape primitives (Circle, Box, Polygon)
 - 🚧 Constraint solving
 - 🚧 Spatial partitioning (Quadtree)
@@ -48,8 +51,13 @@ Ngen2D/
 │   │   ├── RigidBody   # Dynamic body with mass and forces
 │   │   └── PhysicsWorld # Physics simulation manager
 │   │
+│   ├── collision/      # Collision detection and resolution
+│   │   ├── AABBCollider  # AABB structure definition
+│   │   ├── Collision     # Collision detection algorithms
+│   │   └── CollisionResolver # Mass-based collision response
+│   │
 │   ├── shapes/         # Shape primitives [Coming soon]
-│   └── core/           # [Future: Object lifecycle, Memory management]
+│   └── core/           # Core utilities (Time, Config)
 │
 ├── platform/           # Platform-specific rendering/windowing
 │   └── SDLApp          # SDL2 window and renderer wrapper
@@ -65,8 +73,10 @@ Ngen2D/
 | Component | Purpose | Dependencies |
 |-----------|---------|--------------|
 | **PhysicsWorld** | Manages all physics bodies and simulation stepping | RigidBody |
+| **Collision** | AABB generation and collision detection | RigidBody, AABBCollider |
+| **CollisionResolver** | Mass-based collision response and separation | RigidBody |
 | **SDLApp** | Manages window, renderer, event loop, and drawing | SDL2 |
-| **Sandbox** | Demo scene showcasing physics simulation | PhysicsWorld, RigidBody |
+| **Sandbox** | Demo scene showcasing physics simulation | PhysicsWorld, RigidBody, Collision |
 | **PhysicsDemo** | Entry point that wires everything together | engine, platform, demo
 
 ## 📦 Prerequisites
@@ -217,15 +227,18 @@ int main() {
 
 ## 🛤️ Roadmap
 
-### Phase 1: Core Physics ✅ (Current)
+### Phase 1: Core Physics
 - [x] Vector2 mathematics
 - [x] Rigid body dynamics
 - [x] Basic SDL2 integration
 - [x] Fix normalize() memory leak
 
-### Phase 2: Collision System 🚧
-- [ ] AABB (Axis-Aligned Bounding Box)
+### Phase 2: Collision Handling ✅ (Current)
+- [x] AABB (Axis-Aligned Bounding Box) collision detection
+- [x] Mass-based collision resolution (position correction)
 - [ ] Circle collision
+- [ ] SAT (Separating Axis Theorem) for polygons
+- [ ] Impulse-based collision response (velocity changes)
 - [ ] SAT (Separating Axis Theorem) for polygons
 - [ ] Collision response (impulse-based)
 

@@ -45,8 +45,8 @@ void SDLApp::Clear(){
     SDL_RenderClear(renderer);
 }
 
-void SDLApp::DrawRect(float x, float y, int w, int h){
+void SDLApp::DrawRect(float x, float y, int w, int h, SDL_Color color){
     SDL_Rect rect = {static_cast<int>(x - w / 2), static_cast<int>(y - h / 2), w, h};
-    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
     SDL_RenderFillRect(renderer, &rect);
 }
