@@ -47,11 +47,3 @@ void Sandbox::Update(){
         }
     }
 }
-
-RigidBody* Sandbox::GetBox(){
-    return &box;
-}
-
-RigidBody* Sandbox::GetGround(){
-    return &ground;
-}

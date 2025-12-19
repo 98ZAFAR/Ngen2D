@@ -1,6 +1,7 @@
 #include "platform/SDLApp.h"
 #include "demo/Sandbox.h"
 
+
 int main(int argc, char* argv[]){
     SDLApp app;
     Sandbox sandbox;
@@ -11,17 +12,18 @@ int main(int argc, char* argv[]){
         return -1;
 
     while(app.IsRunning()){
-        app.HandleEvents();
+        app.HandleEvents(sandbox.GetWorld());
         sandbox.Update();
 
         app.Clear();
+
+        // RigidBody* box = sandbox.GetBox();
+        // app.DrawRect(box->position.x, box->position.y, box->size.x, box->size.y, boxColor);
         
-        RigidBody* box = sandbox.GetBox();
-        app.DrawRect(box->position.x, box->position.y, box->size.x, box->size.y, boxColor);
+        // RigidBody* ground = sandbox.GetGround();
+        // app.DrawRect(ground->position.x, ground->position.y, ground->size.x, ground->size.y, groundColor); // Draw ground
         
-        RigidBody* ground = sandbox.GetGround();
-        app.DrawRect(ground->position.x, ground->position.y, ground->size.x, ground->size.y, groundColor); // Draw ground
-        app.Render();
+        app.Paint(sandbox.GetWorld());
     }
 
     app.Shutdown();

@@ -5,7 +5,6 @@ class RigidBody{
     public:
     Vector2 size;
     Vector2 position;
-    Vector2 quaternion;
     Vector2 velocity;
     Vector2 force;
 

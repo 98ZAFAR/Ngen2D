@@ -14,16 +14,21 @@ void CollisionResolver::Resolve(RigidBody &a, RigidBody &b){
     float aRatio = a.inverseMass / totalInverseMass;
     float bRatio = b.inverseMass / totalInverseMass;
 
-    if(overlapX < overlapY){
-        // Adjustment along X axis
-        float sign = (delta.x < 0) ? -1.0f : 1.0f;
-        a.position.x -= overlapX * sign * aRatio;
-        b.position.x += overlapX * sign * bRatio;
-    }
-    else{
-        // Adjustment along Y axis
-        float sign = (delta.y < 0) ? -1.0f : 1.0f;
-        a.position.y -= overlapY * sign * aRatio;
-        b.position.y += overlapY * sign * bRatio;
+    if(overlapX>0 && overlapY>0){
+        if(overlapX < overlapY){
+            float separation = (delta.x < 0) ? -overlapX : overlapX;
+            a.position.x -= separation * aRatio;
+            b.position.x += separation * bRatio;
+
+            a.velocity.x = 0;
+            b.velocity.x = 0;
+        } else {
+            float separation = (delta.y < 0) ? -overlapY : overlapY;
+            a.position.y -= separation * aRatio;
+            b.position.y += separation * bRatio;
+
+            a.velocity.y = 0;
+            b.velocity.y = 0;
+        }
     }
 }
