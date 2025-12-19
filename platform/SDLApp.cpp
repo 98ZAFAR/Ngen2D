@@ -39,9 +39,10 @@ void SDLApp::HandleEvents(PhysicsWorld &world){
             float mouseY = static_cast<float>(event.button.y);
 
             std::cout << "Mouse Clicked at: (" << mouseX << ", " << mouseY << ")\n";
-            RigidBody* entity = new RigidBody(1.0f);;
+            RigidBody* entity = new RigidBody(1.0f);
             entity->position = Vector2(mouseX, mouseY);
             entity->size = Vector2(50.0f, 50.0f);
+            entity->restitution = 0.8f; // Set some bounciness
 
             world.AddBody(entity);
         }

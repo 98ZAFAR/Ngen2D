@@ -10,6 +10,7 @@ class RigidBody{
 
     float mass;
     float inverseMass;
+    float restitution = 0.0f; // Bounciness factor
 
     RigidBody(float m=1.0f);
 
