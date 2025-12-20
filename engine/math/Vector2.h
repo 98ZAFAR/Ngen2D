@@ -48,7 +48,7 @@ struct Vector2{
     // Normalize the vector
     Vector2 normalize() const {
         float mgn = length();
-        if(mgn>0) return Vector2(x/mgn, y/mgn);
+        if(mgn>0.00001f) return Vector2(x/mgn, y/mgn);
         return Vector2(0, 0);
     }
 };

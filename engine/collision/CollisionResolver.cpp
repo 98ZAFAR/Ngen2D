@@ -50,4 +50,24 @@ void CollisionResolver::Resolve(RigidBody& a, RigidBody& b)
 
     a.velocity -= impulse * a.inverseMass;
     b.velocity += impulse * b.inverseMass;
+
+    // ---- friction resolution ----
+    relativeVelocity = b.velocity - a.velocity;
+    Vector2 tangent = relativeVelocity - normal * relativeVelocity.dot(normal);
+    tangent = tangent.normalize();
+
+    float jt = -relativeVelocity.dot(tangent);
+    jt /= totalInvMass;
+    float mu = std::sqrt(a.staticFriction * a.staticFriction + b.staticFriction * b.staticFriction);
+
+    Vector2 frictionImpulse;
+    if (std::abs(jt) < j * mu) {
+        frictionImpulse = tangent * jt;
+    } else {
+        float dynamicFriction = std::sqrt(a.dynamicFriction * a.dynamicFriction + b.dynamicFriction * b.dynamicFriction);
+        frictionImpulse = tangent * -j * dynamicFriction;
+    }
+
+    a.velocity -= frictionImpulse * a.inverseMass;
+    b.velocity += frictionImpulse * b.inverseMass;
 }

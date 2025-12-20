@@ -43,6 +43,7 @@ void SDLApp::HandleEvents(PhysicsWorld &world){
             entity->position = Vector2(mouseX, mouseY);
             entity->size = Vector2(50.0f, 50.0f);
             entity->restitution = 0.8f; // Set some bounciness
+            entity->velocity = Vector2(120.0f, 0.0f);
 
             world.AddBody(entity);
         }

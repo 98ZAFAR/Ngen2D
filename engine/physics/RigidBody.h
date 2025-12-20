@@ -11,6 +11,8 @@ class RigidBody{
     float mass;
     float inverseMass;
     float restitution = 0.0f; // Bounciness factor
+    float staticFriction = 0.5f;
+    float dynamicFriction = 0.3f;
 
     RigidBody(float m=1.0f);
 

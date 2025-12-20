@@ -10,6 +10,7 @@
 // Initialize the sandbox with a box and ground
 Sandbox::Sandbox(): box(1.0f), ground(0.0f) {
     box.position = {200.0f, 100.0f};
+    box.velocity = {100.0f, 0.0f};
     box.size = {50.0f, 50.0f};
     box.restitution = 0.8f; // Set some bounciness
     world.AddBody(&box);
