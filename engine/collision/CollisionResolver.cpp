@@ -1,13 +1,17 @@
 #include "CollisionResolver.h"
 #include <cmath>
 #include <algorithm>
+#include "../shapes/AABBShape.h"
 
-void CollisionResolver::Resolve(RigidBody& a, RigidBody& b)
+void CollisionResolver::Resolve(RigidBody &a, RigidBody &b)
 {
     Vector2 delta = b.position - a.position;
 
-    float overlapX = (a.size.x * 0.5f + b.size.x * 0.5f) - std::abs(delta.x);
-    float overlapY = (a.size.y * 0.5f + b.size.y * 0.5f) - std::abs(delta.y);
+    AABBShape *shapeA = static_cast<AABBShape *>(a.collider->shape);
+    AABBShape *shapeB = static_cast<AABBShape *>(b.collider->shape);
+
+    float overlapX = (shapeA->halfsize.x + shapeB->halfsize.x) - std::abs(delta.x);
+    float overlapY = (shapeA->halfsize.y + shapeB->halfsize.y) - std::abs(delta.y);
 
     if (overlapX <= 0.0f || overlapY <= 0.0f)
         return;
@@ -20,17 +24,20 @@ void CollisionResolver::Resolve(RigidBody& a, RigidBody& b)
     Vector2 normal;
     float penetration;
 
-    if (overlapX < overlapY) {
-        normal = { (delta.x < 0) ? -1.0f : 1.0f, 0.0f };
+    if (overlapX < overlapY)
+    {
+        normal = {(delta.x < 0) ? -1.0f : 1.0f, 0.0f};
         penetration = overlapX;
-    } else {
-        normal = { 0.0f, (delta.y < 0) ? -1.0f : 1.0f };
+    }
+    else
+    {
+        normal = {0.0f, (delta.y < 0) ? -1.0f : 1.0f};
         penetration = overlapY;
     }
 
     // ---- positional correction ----
-    const float slop = 0.01f; // penetration allowance
-    const float percent = 0.8f;   // penetration correction strength
+    const float slop = 0.01f;   // penetration allowance
+    const float percent = 0.8f; // penetration correction strength
     Vector2 correction = normal * (std::max(penetration - slop, 0.0f) / totalInvMass * percent);
 
     a.position -= correction * a.inverseMass;
@@ -43,7 +50,7 @@ void CollisionResolver::Resolve(RigidBody& a, RigidBody& b)
     if (velAlongNormal > 0.0f)
         return;
 
-    float e = a.restitution<b.restitution? a.restitution : b.restitution;
+    float e = a.collider->restitution < b.collider->restitution ? a.collider->restitution : b.collider->restitution;
 
     float j = -(1.0f + e) * velAlongNormal;
     j /= totalInvMass;
@@ -60,16 +67,103 @@ void CollisionResolver::Resolve(RigidBody& a, RigidBody& b)
 
     float jt = -relativeVelocity.dot(tangent);
     jt /= totalInvMass;
-    float mu = std::sqrt(a.staticFriction * a.staticFriction + b.staticFriction * b.staticFriction);
+    float mu = std::sqrt(a.collider->staticFriction * a.collider->staticFriction + b.collider->staticFriction * b.collider->staticFriction);
 
     Vector2 frictionImpulse;
-    if (std::abs(jt) < j * mu) {
+    if (std::abs(jt) < j * mu)
+    {
         frictionImpulse = tangent * jt;
-    } else {
-        float dynamicFriction = std::sqrt(a.dynamicFriction * a.dynamicFriction + b.dynamicFriction * b.dynamicFriction);
+    }
+    else
+    {
+        float dynamicFriction = std::sqrt(a.collider->dynamicFriction * a.collider->dynamicFriction + b.collider->dynamicFriction * b.collider->dynamicFriction);
         frictionImpulse = tangent * -j * dynamicFriction;
     }
 
     a.velocity -= frictionImpulse * a.inverseMass;
     b.velocity += frictionImpulse * b.inverseMass;
+}
+
+void CollisionResolver::Resolve(
+    RigidBody& a,
+    RigidBody& b,
+    const CollisionManifold& m
+) {
+    // ---- early out ----
+    float totalInvMass = a.inverseMass + b.inverseMass;
+    if (totalInvMass == 0.0f)
+        return;
+
+    const float slop = 0.01f;     // allowed penetration
+    const float percent = 0.8f;   // correction strength
+
+    float correctionMag =
+        std::max(m.penetration - slop, 0.0f) / totalInvMass * percent;
+
+    Vector2 correction = m.normal * correctionMag;
+
+    a.position -= correction * a.inverseMass;
+    b.position += correction * b.inverseMass;
+
+    Vector2 rv = b.velocity - a.velocity;
+    float velAlongNormal = rv.dot(m.normal);
+
+    // Objects are separating
+    if (velAlongNormal > 0.0f)
+        return;
+
+    float restitution = std::min(
+        a.collider->restitution,
+        b.collider->restitution
+    );
+
+    float j = -(1.0f + restitution) * velAlongNormal;
+    j /= totalInvMass;
+
+    Vector2 impulse = m.normal * j;
+    a.velocity -= impulse * a.inverseMass;
+    b.velocity += impulse * b.inverseMass;
+
+    rv = b.velocity - a.velocity;
+
+    Vector2 tangent = rv - m.normal * rv.dot(m.normal);
+    float tangentLen = tangent.length();
+
+    if (tangentLen > 1e-6f) {
+        tangent /= tangentLen;
+
+        float jt = -rv.dot(tangent);
+        jt /= totalInvMass;
+
+        float muStatic = std::sqrt(
+            a.collider->staticFriction * a.collider->staticFriction +
+            b.collider->staticFriction * b.collider->staticFriction
+        );
+
+        float muDynamic = std::sqrt(
+            a.collider->dynamicFriction * a.collider->dynamicFriction +
+            b.collider->dynamicFriction * b.collider->dynamicFriction
+        );
+
+        Vector2 frictionImpulse;
+
+        // Static friction (stick)
+        if (std::abs(jt) < j * muStatic) {
+            frictionImpulse = tangent * jt;
+        }
+        // Dynamic friction (slide)
+        else {
+            frictionImpulse = tangent * (-j * muDynamic);
+        }
+
+        a.velocity -= frictionImpulse * a.inverseMass;
+        b.velocity += frictionImpulse * b.inverseMass;
+    }
+
+    const float velocityEpsilon = 0.05f;
+
+    if (std::abs(a.velocity.x) < velocityEpsilon) a.velocity.x = 0.0f;
+    if (std::abs(a.velocity.y) < velocityEpsilon) a.velocity.y = 0.0f;
+    if (std::abs(b.velocity.x) < velocityEpsilon) b.velocity.x = 0.0f;
+    if (std::abs(b.velocity.y) < velocityEpsilon) b.velocity.y = 0.0f;
 }

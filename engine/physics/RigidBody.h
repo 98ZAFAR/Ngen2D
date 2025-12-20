@@ -1,5 +1,6 @@
 #pragma once
 #include "../math/Vector2.h"
+#include "../collision/Collider.h"
 
 class RigidBody{
     public:
@@ -10,9 +11,8 @@ class RigidBody{
 
     float mass;
     float inverseMass;
-    float restitution = 0.0f; // Bounciness factor
-    float staticFriction = 0.3f;
-    float dynamicFriction = 0.2f;
+
+    Collider* collider = nullptr;
 
     RigidBody(float m=1.0f);
 

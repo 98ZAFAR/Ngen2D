@@ -19,15 +19,11 @@ void PhysicsWorld::Step(float deltaTime){
     for(int it=0; it<iterations; it++){
         for(int i=0; i<bodies.size(); i++){
             RigidBody* bodyA = bodies[i];
-            AABB aabbA = Collision::GetAABB(*bodyA);
 
             for(int j=i+1; j<bodies.size(); j++){
                 RigidBody* bodyB = bodies[j];
-                AABB aabbB = Collision::GetAABB(*bodyB);
 
-                if(Collision::AABBvsAABB(aabbA, aabbB)){
-                    CollisionResolver::Resolve(*bodyA, *bodyB);
-                }
+                Collision::CheckCollision(*bodyA, *bodyB);
             }
         }
     }

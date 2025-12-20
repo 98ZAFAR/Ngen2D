@@ -34,6 +34,18 @@ struct Vector2{
 
         return *this;
     }
+    Vector2& operator*=(float scalar){
+        x*=scalar;
+        y*=scalar;
+
+        return *this;
+    }
+    Vector2& operator/=(float scalar){
+        x/=scalar;
+        y/=scalar;
+
+        return *this;
+    }
 
     // Calculate Dot Product
     float dot(const Vector2& other) const{

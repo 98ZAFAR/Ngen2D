@@ -12,5 +12,6 @@ class Sandbox{
         // Sandbox specific data and methods would go here
         PhysicsWorld world;
         RigidBody box;
+        RigidBody ball;
         RigidBody ground;
 };

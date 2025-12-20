@@ -9,6 +9,7 @@ class SDLApp{
         bool IsRunning() const;
         void HandleEvents(PhysicsWorld &world);
         void DrawRect(float x, float y, int w, int h, SDL_Color color);
+        void DrawCircle(float x, float y, int radius, SDL_Color color);
         void Paint(PhysicsWorld &world);
         void Clear();
     private:
