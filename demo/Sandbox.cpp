@@ -1,7 +1,5 @@
 #include "Sandbox.h"
 #include "../engine/core/Time.h"
-#include "../engine/collision/Collision.h"
-#include "../engine/collision/CollisionResolver.h"
 
 #include <iostream>
 #include <thread>
@@ -34,19 +32,4 @@ void Sandbox::Update(){
     //     box.velocity.y = 0;
     //     // box.ApplyForce(Vector2(0, -2*box.mass * 980.0f)); // Apply an upward force to simulate bounce
     // }
-
-    // Simple check for collisions between all bodies
-    for(int i=0; i<world.GetBodyCount(); i++){
-        RigidBody* bodyA = world.GetBody(i);
-        AABB aabbA = Collision::GetAABB(*bodyA);
-
-        for(int j=i+1; j<world.GetBodyCount(); j++){
-            RigidBody* bodyB = world.GetBody(j);
-            AABB aabbB = Collision::GetAABB(*bodyB);
-
-            if(Collision::AABBvsAABB(aabbA, aabbB)){
-                CollisionResolver::Resolve(*bodyA, *bodyB);
-            }
-        }
-    }
 }

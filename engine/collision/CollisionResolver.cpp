@@ -1,5 +1,6 @@
 #include "CollisionResolver.h"
 #include <cmath>
+#include <algorithm>
 
 void CollisionResolver::Resolve(RigidBody& a, RigidBody& b)
 {
@@ -28,8 +29,9 @@ void CollisionResolver::Resolve(RigidBody& a, RigidBody& b)
     }
 
     // ---- positional correction ----
+    const float slop = 0.01f; // penetration allowance
     const float percent = 0.8f;   // penetration correction strength
-    Vector2 correction = normal * (penetration / totalInvMass * percent);
+    Vector2 correction = normal * (std::max(penetration - slop, 0.0f) / totalInvMass * percent);
 
     a.position -= correction * a.inverseMass;
     b.position += correction * b.inverseMass;
