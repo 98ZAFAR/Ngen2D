@@ -1,5 +1,6 @@
 #pragma once
 #include "../engine/physics/PhysicsWorld.h"
+#include <chrono>
 
 class Sandbox{
     public:
@@ -14,4 +15,8 @@ class Sandbox{
         RigidBody box;
         RigidBody ball;
         RigidBody ground;
+        
+        // Fixed timestep variables
+        float accumulator = 0.0f;
+        std::chrono::high_resolution_clock::time_point lastTime;
 };

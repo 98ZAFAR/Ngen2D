@@ -16,6 +16,9 @@ Sandbox::Sandbox(): box(1.0f), ground(0.0f), ball(1.0f) {
     GravityForce* gravity = new GravityForce(Vector2(0.0f, Config::GRAVITY));
     world.AddForceGenerator(gravity);
 
+    // Initialize timing
+    lastTime = std::chrono::high_resolution_clock::now();
+
 
     // Box Initialization
     box.position = {200.0f, 100.0f};
@@ -47,8 +50,20 @@ Sandbox::Sandbox(): box(1.0f), ground(0.0f), ball(1.0f) {
 
 // Update the sandbox state
 void Sandbox::Update(){
-    // Simulate a frame delay
-    std::this_thread::sleep_for(std::chrono::milliseconds(16));
-    // Step the physics world
-    world.Step(Time::FixedDeltaTime);
+    // Calculate delta time (frame time)
+    auto currentTime = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<float> deltaTime = currentTime - lastTime;
+    lastTime = currentTime;
+    
+    float frameTime = deltaTime.count();
+    
+    if(frameTime > 0.25f)
+        frameTime = 0.25f;
+    
+    accumulator += frameTime;
+    
+    while(accumulator >= Time::FixedDeltaTime){
+        world.Step(Time::FixedDeltaTime);
+        accumulator -= Time::FixedDeltaTime;
+    }
 }
