@@ -15,25 +15,25 @@ Sandbox::Sandbox(): box(1.0f), ground(0.0f), ball(1.0f) {
     box.size = {50.0f, 50.0f};
     // Initialize collider before accessing it
     box.collider = new Collider(new AABBShape(Vector2(box.size/2)));
-    box.collider->restitution = 0.8f; // Set some bounciness
+    box.collider->restitution = 0.6f; // Set some bounciness
     world.AddBody(&box);
 
     ground.position = {600.0f, 775.0f};
     ground.size = {1200.0f, 50.0f};
     // Initialize collider before accessing it
     ground.collider = new Collider(new AABBShape(Vector2(ground.size/2)));
-    ground.collider->restitution = 0.5f; // Some bounciness for ground
-    ground.collider->staticFriction = 0.6f;  // Add friction to ground
-    ground.collider->dynamicFriction = 0.4f;
+    ground.collider->restitution = 0.6f; // Some bounciness for ground
+    ground.collider->staticFriction = 0.3f;  // Add friction to ground
+    ground.collider->dynamicFriction = 0.2f;
     world.AddBody(&ground);
 
     ball.position = {400.0f, 50.0f};
     ball.velocity = {0.0f, 0.0f};
     ball.size = {50.0f, 50.0f};
     ball.collider = new Collider(new CircleShape(ball.size.x / 2));
-    ball.collider->restitution = 0.7f; // Set some bounciness
-    ball.collider->staticFriction = 0.6f;  // Increase friction for more realistic rolling
-    ball.collider->dynamicFriction = 0.4f;
+    ball.collider->restitution = 0.9f; // Set some bounciness
+    ball.collider->staticFriction = 0.3f;  // Increase friction for more realistic rolling
+    ball.collider->dynamicFriction = 0.2f;
     world.AddBody(&ball);
 }
 

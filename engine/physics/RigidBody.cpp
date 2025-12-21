@@ -10,11 +10,15 @@ RigidBody::RigidBody(float m):mass(m), position(), velocity(), force(){
 }
 
 void RigidBody::ApplyForce(const Vector2& f){
+    sleepTime = 0.0f;
+    isSleeping = false;
     force += f;
 }
 
 void RigidBody::Integrate(float deltaTime){
     if(inverseMass<=0.0f) return;
+
+    if(isSleeping) return;
 
     // Update velocity
     Vector2 acceleration = force * inverseMass;

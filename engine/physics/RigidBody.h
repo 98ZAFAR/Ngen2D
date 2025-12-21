@@ -12,6 +12,9 @@ class RigidBody{
     float mass;
     float inverseMass;
 
+    bool isSleeping = false;
+    float sleepTime = 0.0f;
+
     Collider* collider = nullptr;
 
     RigidBody(float m=1.0f);

@@ -45,9 +45,12 @@ void SDLApp::HandleEvents(PhysicsWorld &world){
             entity->position = Vector2(mouseX, mouseY);
             entity->size = Vector2(50.0f, 50.0f);
 
+            // entity->collider = new Collider(new AABBShape(entity->size/2));
             entity->collider = new Collider(new CircleShape(entity->size.x / 2));
-            entity->collider->restitution = 0.8f; // Set some bounciness
-            entity->velocity = Vector2(120.0f, 0.0f);
+            entity->collider->restitution = 0.9f; // Set some bounciness
+            entity->collider->staticFriction = 0.2f;
+            entity->collider->dynamicFriction = 0.1f;
+            entity->velocity = Vector2(400.0f, 0.0f);
 
             world.AddBody(entity);
         }
@@ -66,15 +69,34 @@ void SDLApp::DrawRect(float x, float y, int w, int h, SDL_Color color){
     SDL_RenderFillRect(renderer, &rect);
 }
 
-void SDLApp::DrawCircle(float x, float y, int radius, SDL_Color color){
+void SDLApp::DrawCircle(float xc, float yc, int r, SDL_Color color){
     SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
-    for(int w = 0; w < radius * 2; w++){
-        for(int h = 0; h < radius * 2; h++){
-            int dx = radius - w; // horizontal offset
-            int dy = radius - h; // vertical offset
-            if((dx*dx + dy*dy) <= (radius * radius)){
-                SDL_RenderDrawPoint(renderer, static_cast<int>(x + dx), static_cast<int>(y + dy));
-            }
+
+    //Midpoint circle algorithm
+    int x = 0;
+    int y = r;
+
+    int p = 1 - r;
+    while (x <= y)
+    {
+        plotPixel(xc + x, yc + y);
+        plotPixel(xc - x, yc + y);
+        plotPixel(xc + x, yc - y);
+        plotPixel(xc - x, yc - y);
+
+        plotPixel(xc + y, yc + x);
+        plotPixel(xc - y, yc + x);
+        plotPixel(xc + y, yc - x);
+        plotPixel(xc - y, yc - x);
+
+        x++;
+
+        if (p < 0)
+            p += 2 * x + 1;
+        else
+        {
+            y--;
+            p += 2 * (x - y) + 1;
         }
     }
 }

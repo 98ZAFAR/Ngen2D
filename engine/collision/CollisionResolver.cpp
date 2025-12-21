@@ -5,6 +5,12 @@
 
 void CollisionResolver::Resolve(RigidBody &a, RigidBody &b)
 {
+    a.sleepTime = 0.0f;
+    b.sleepTime = 0.0f;
+    a.isSleeping = false;
+    b.isSleeping = false;
+
+    // ---- early out ----
     Vector2 delta = b.position - a.position;
 
     AABBShape *shapeA = static_cast<AABBShape *>(a.collider->shape);
@@ -50,7 +56,8 @@ void CollisionResolver::Resolve(RigidBody &a, RigidBody &b)
     if (velAlongNormal > 0.0f)
         return;
 
-    float e = a.collider->restitution < b.collider->restitution ? a.collider->restitution : b.collider->restitution;
+    // float e = std::min(a.collider->restitution, b.collider->restitution);
+    float e = (a.collider->restitution + b.collider->restitution) / 2.0f;
 
     float j = -(1.0f + e) * velAlongNormal;
     j /= totalInvMass;
@@ -61,41 +68,47 @@ void CollisionResolver::Resolve(RigidBody &a, RigidBody &b)
     b.velocity += impulse * b.inverseMass;
 
     // ---- friction resolution ----
-    relativeVelocity = b.velocity - a.velocity;
-    Vector2 tangent = relativeVelocity - normal * relativeVelocity.dot(normal);
-    tangent = tangent.normalize();
+    // Calculate friction using original relative velocity (before normal impulse)
+    Vector2 tangent = relativeVelocity - normal * velAlongNormal;
+    float tangentLen = tangent.length();
 
-    float jt = -relativeVelocity.dot(tangent);
-    jt /= totalInvMass;
-    float mu = std::sqrt(a.collider->staticFriction * a.collider->staticFriction + b.collider->staticFriction * b.collider->staticFriction);
-
-    Vector2 frictionImpulse;
-    if (std::abs(jt) < j * mu)
+    if (tangentLen > 1e-6f)
     {
-        frictionImpulse = tangent * jt;
-    }
-    else
-    {
-        float dynamicFriction = std::sqrt(a.collider->dynamicFriction * a.collider->dynamicFriction + b.collider->dynamicFriction * b.collider->dynamicFriction);
-        frictionImpulse = tangent * -j * dynamicFriction;
-    }
+        tangent /= tangentLen;
 
-    a.velocity -= frictionImpulse * a.inverseMass;
-    b.velocity += frictionImpulse * b.inverseMass;
+        float jt = -relativeVelocity.dot(tangent);
+        jt /= totalInvMass;
+
+        // Use geometric mean for friction coefficient
+        float mu = std::sqrt(a.collider->dynamicFriction * b.collider->dynamicFriction);
+
+        float maxFriction = mu * std::abs(j);
+
+        jt = std::clamp(jt, -maxFriction, maxFriction);
+
+        Vector2 frictionImpulse = tangent * jt;
+
+        a.velocity -= frictionImpulse * a.inverseMass;
+        b.velocity += frictionImpulse * b.inverseMass;
+    }
 }
 
 void CollisionResolver::Resolve(
-    RigidBody& a,
-    RigidBody& b,
-    const CollisionManifold& m
-) {
+    RigidBody &a,
+    RigidBody &b,
+    const CollisionManifold &m)
+{
+    a.sleepTime = 0.0f;
+    b.sleepTime = 0.0f;
+    a.isSleeping = false;
+    b.isSleeping = false;
     // ---- early out ----
     float totalInvMass = a.inverseMass + b.inverseMass;
     if (totalInvMass == 0.0f)
         return;
 
-    const float slop = 0.01f;     // allowed penetration
-    const float percent = 0.8f;   // correction strength
+    const float slop = 0.01f;   // allowed penetration
+    const float percent = 0.8f; // correction strength
 
     float correctionMag =
         std::max(m.penetration - slop, 0.0f) / totalInvMass * percent;
@@ -112,10 +125,12 @@ void CollisionResolver::Resolve(
     if (velAlongNormal > 0.0f)
         return;
 
-    float restitution = std::min(
-        a.collider->restitution,
-        b.collider->restitution
-    );
+    // float restitution = std::min(
+    //     a.collider->restitution,
+    //     b.collider->restitution
+    // );
+
+    float restitution = (a.collider->restitution + b.collider->restitution) / 2.0f;
 
     float j = -(1.0f + restitution) * velAlongNormal;
     j /= totalInvMass;
@@ -124,46 +139,39 @@ void CollisionResolver::Resolve(
     a.velocity -= impulse * a.inverseMass;
     b.velocity += impulse * b.inverseMass;
 
-    rv = b.velocity - a.velocity;
-
-    Vector2 tangent = rv - m.normal * rv.dot(m.normal);
+    // ---- friction resolution ----
+    // Calculate friction using original relative velocity (before normal impulse)
+    Vector2 tangent = rv - m.normal * velAlongNormal;
     float tangentLen = tangent.length();
 
-    if (tangentLen > 1e-6f) {
+    if (tangentLen > 1e-6f)
+    {
         tangent /= tangentLen;
 
         float jt = -rv.dot(tangent);
         jt /= totalInvMass;
 
-        float muStatic = std::sqrt(
-            a.collider->staticFriction * a.collider->staticFriction +
-            b.collider->staticFriction * b.collider->staticFriction
-        );
+        // Use geometric mean for friction coefficient
+        float mu = std::sqrt(a.collider->dynamicFriction * b.collider->dynamicFriction);
 
-        float muDynamic = std::sqrt(
-            a.collider->dynamicFriction * a.collider->dynamicFriction +
-            b.collider->dynamicFriction * b.collider->dynamicFriction
-        );
+        float maxFriction = mu * std::abs(j);
 
-        Vector2 frictionImpulse;
+        jt = std::clamp(jt, -maxFriction, maxFriction);
 
-        // Static friction (stick)
-        if (std::abs(jt) < j * muStatic) {
-            frictionImpulse = tangent * jt;
-        }
-        // Dynamic friction (slide)
-        else {
-            frictionImpulse = tangent * (-j * muDynamic);
-        }
+        Vector2 frictionImpulse = tangent * jt;
 
         a.velocity -= frictionImpulse * a.inverseMass;
         b.velocity += frictionImpulse * b.inverseMass;
     }
 
-    const float velocityEpsilon = 0.05f;
+    const float velocityEpsilon = 0.5f;
 
-    if (std::abs(a.velocity.x) < velocityEpsilon) a.velocity.x = 0.0f;
-    if (std::abs(a.velocity.y) < velocityEpsilon) a.velocity.y = 0.0f;
-    if (std::abs(b.velocity.x) < velocityEpsilon) b.velocity.x = 0.0f;
-    if (std::abs(b.velocity.y) < velocityEpsilon) b.velocity.y = 0.0f;
+    if (std::abs(a.velocity.x) < velocityEpsilon)
+        a.velocity.x = 0.0f;
+    if (std::abs(a.velocity.y) < velocityEpsilon)
+        a.velocity.y = 0.0f;
+    if (std::abs(b.velocity.x) < velocityEpsilon)
+        b.velocity.x = 0.0f;
+    if (std::abs(b.velocity.y) < velocityEpsilon)
+        b.velocity.y = 0.0f;
 }

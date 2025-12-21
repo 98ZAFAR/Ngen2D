@@ -52,9 +52,14 @@ struct Vector2{
         return x*other.x + y*other.y;
     }
 
+    // Calculate squared magnitude (faster, avoids sqrt)
+    float lengthSquared() const{
+        return x*x + y*y;
+    }
+
     // Calculate Magnitude
     float length() const{
-        return std::sqrt(x*x + y*y);
+        return std::sqrt(lengthSquared());
     }
 
     // Normalize the vector
