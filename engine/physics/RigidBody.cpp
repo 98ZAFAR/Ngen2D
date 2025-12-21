@@ -1,5 +1,4 @@
 #include "RigidBody.h"
-#include "../core/Config.h"
 
 RigidBody::RigidBody(float m):mass(m), position(), velocity(), force(){
     if(mass > 0){
@@ -25,15 +24,12 @@ void RigidBody::Integrate(float deltaTime){
     velocity += acceleration * deltaTime;
     position += velocity * deltaTime;
     // Clear force
+    ClearForces();
+}
+
+void RigidBody::ClearForces(){
     force = Vector2(0,0);
 }
 
-void RigidBody::ApplyGravity(){
-    if(inverseMass<=0.0f) return;
-    ApplyForce(Vector2(0, Config::GRAVITY * mass));
-}
-
 void RigidBody::ApplyTorque(float torque){
-    // Placeholder for torque application
-    // In a full implementation, this would affect angular velocity and rotation
 }

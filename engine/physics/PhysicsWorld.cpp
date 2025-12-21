@@ -8,12 +8,22 @@ void PhysicsWorld::AddBody(RigidBody* body){
     bodies.push_back(body);
 }
 
+void PhysicsWorld::AddForceGenerator(ForceGenerator* fg){
+    forceGenerators.push_back(fg);
+}
+
 void PhysicsWorld::Step(float deltaTime){
-    // Apply gravity and integrate motion
+    // Apply Force Generators
+    for(ForceGenerator* fg : forceGenerators){
+        for(auto body : bodies){
+            if(!body->isSleeping)
+                fg->Apply(*body);
+        }
+    }
+
+    // Integrate motion
     for(auto body : bodies){
         if(body->isSleeping) continue;
-
-        body->ApplyGravity();
         body->Integrate(deltaTime);
 
         // Sleep detection (use lengthSquared to avoid sqrt)

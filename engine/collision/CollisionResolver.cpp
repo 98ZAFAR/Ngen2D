@@ -125,11 +125,6 @@ void CollisionResolver::Resolve(
     if (velAlongNormal > 0.0f)
         return;
 
-    // float restitution = std::min(
-    //     a.collider->restitution,
-    //     b.collider->restitution
-    // );
-
     float restitution = (a.collider->restitution + b.collider->restitution) / 2.0f;
 
     float j = -(1.0f + restitution) * velAlongNormal;
@@ -140,7 +135,6 @@ void CollisionResolver::Resolve(
     b.velocity += impulse * b.inverseMass;
 
     // ---- friction resolution ----
-    // Calculate friction using original relative velocity (before normal impulse)
     Vector2 tangent = rv - m.normal * velAlongNormal;
     float tangentLen = tangent.length();
 

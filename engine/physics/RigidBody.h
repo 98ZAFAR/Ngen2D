@@ -22,5 +22,5 @@ class RigidBody{
     void ApplyForce(const Vector2& f);
     void ApplyTorque(float torque);
     void Integrate(float deltaTime);
-    void ApplyGravity();
+    void ClearForces();
 };

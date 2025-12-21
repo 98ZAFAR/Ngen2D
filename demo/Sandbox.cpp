@@ -1,8 +1,10 @@
 #include "Sandbox.h"
 #include "../engine/core/Time.h"
+#include "../engine/core/Config.h"
 #include "../engine/shapes/AABBShape.h"
 #include "../engine/shapes/CircleShape.h"
 #include "../engine/collision/Collider.h"
+#include "../engine/forces/GravityForce.h"
 
 #include <iostream>
 #include <thread>
@@ -10,6 +12,10 @@
 
 // Initialize the sandbox with a box and ground
 Sandbox::Sandbox(): box(1.0f), ground(0.0f), ball(1.0f) {
+    //Gravity Initialization
+    GravityForce* gravity = new GravityForce(Vector2(0.0f, Config::GRAVITY));
+    world.AddForceGenerator(gravity);
+
     box.position = {200.0f, 100.0f};
     box.velocity = {0.0f, 0.0f};
     box.size = {50.0f, 50.0f};
