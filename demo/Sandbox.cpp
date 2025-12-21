@@ -10,41 +10,44 @@
 #include <thread>
 #include <chrono>
 
-// Initialize the sandbox with a box and ground
+// Initialize the sandbox with a box, ground and ball
 Sandbox::Sandbox(): box(1.0f), ground(0.0f), ball(1.0f) {
     //Gravity Initialization
     GravityForce* gravity = new GravityForce(Vector2(0.0f, Config::GRAVITY));
     world.AddForceGenerator(gravity);
 
+
+    // Box Initialization
     box.position = {200.0f, 100.0f};
     box.velocity = {0.0f, 0.0f};
     box.size = {50.0f, 50.0f};
-    // Initialize collider before accessing it
     box.collider = new Collider(new AABBShape(Vector2(box.size/2)));
-    box.collider->restitution = 0.6f; // Set some bounciness
+    box.collider->restitution = 0.6f; 
     world.AddBody(&box);
 
+    //Ground Initialization
     ground.position = {600.0f, 775.0f};
     ground.size = {1200.0f, 50.0f};
-    // Initialize collider before accessing it
     ground.collider = new Collider(new AABBShape(Vector2(ground.size/2)));
-    ground.collider->restitution = 0.6f; // Some bounciness for ground
-    ground.collider->staticFriction = 0.3f;  // Add friction to ground
+    ground.collider->restitution = 0.6f; 
+    ground.collider->staticFriction = 0.3f;
     ground.collider->dynamicFriction = 0.2f;
     world.AddBody(&ground);
 
+    // Ball Initialization
     ball.position = {400.0f, 50.0f};
     ball.velocity = {0.0f, 0.0f};
     ball.size = {50.0f, 50.0f};
     ball.collider = new Collider(new CircleShape(ball.size.x / 2));
-    ball.collider->restitution = 0.9f; // Set some bounciness
-    ball.collider->staticFriction = 0.3f;  // Increase friction for more realistic rolling
+    ball.collider->restitution = 0.9f;
+    ball.collider->staticFriction = 0.3f;
     ball.collider->dynamicFriction = 0.2f;
     world.AddBody(&ball);
 }
 
 // Update the sandbox state
 void Sandbox::Update(){
+    // Simulate a frame delay
     std::this_thread::sleep_for(std::chrono::milliseconds(16));
     // Step the physics world
     world.Step(Time::FixedDeltaTime);

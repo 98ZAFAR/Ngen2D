@@ -23,19 +23,21 @@ A lightweight, modular 2D physics engine written in modern C++ with SDL2 renderi
 ### Current Implementation
 - ✅ **2D Vector Mathematics**: Complete vector operations (addition, subtraction, scalar multiplication, dot product, normalization)
 - ✅ **Rigid Body Dynamics**: Position-based physics with force accumulation and Euler integration
-- ✅ **Physics World System**: Centralized physics simulation with body management
-- ✅ **SDL2 Integration**: Window management, rendering pipeline, and event handling with rectangle drawing
-- ✅ **Demo System**: Working sandbox demo with physics visualization
+- ✅ **Physics World System**: Centralized physics simulation with body management and sleep optimization
+- ✅ **SDL2 Integration**: Window management, rendering pipeline, event handling with rectangle and circle drawing
+- ✅ **Demo System**: Interactive sandbox demo with mouse-based object spawning
 - ✅ **Modular Architecture**: Separated engine logic from platform-specific code
-- ✅ **AABB Collision Detection**: Axis-Aligned Bounding Box collision detection system
-- ✅ **Mass-Based Collision Resolution**: Physically accurate collision response respecting object masses and infinite mass support
+- ✅ **Multi-Shape Collision Detection**: AABB vs AABB, Circle vs Circle, AABB vs Circle
+- ✅ **Impulse-Based Collision Resolution**: Physically accurate collision response with restitution and velocity changes
+- ✅ **Friction System**: Dynamic and static friction using Coulomb friction model
+- ✅ **Spatial Hash Optimization**: Broad-phase collision detection using spatial hashing for improved performance
+- ✅ **Sleep System**: Automatic body sleeping for idle objects to reduce CPU usage
 
 ### In Development
-- 🚧 Circle collision detection
 - 🚧 SAT (Separating Axis Theorem) for polygon collision
-- 🚧 Shape primitives (Circle, Box, Polygon)
-- 🚧 Constraint solving
-- 🚧 Spatial partitioning (Quadtree)
+- 🚧 Polygon shape primitives
+- 🚧 Constraint solving (joints, springs)
+- 🚧 Rotation and angular dynamics
 
 ## 🏗️ Architecture
 
@@ -45,18 +47,25 @@ Ngen2D/
 ├── engine/              # Core physics engine (platform-agnostic)
 │   ├── math/           # Mathematical primitives
 │   │   ├── Vector2     # 2D vector with standard operations
-│   │   └── ...         # [Future: Matrix, Transform, etc.]
+│   │   └── MathUtils   # Utility functions (Clamp, etc.)
 │   │
 │   ├── physics/        # Physics simulation
-│   │   ├── RigidBody   # Dynamic body with mass and forces
-│   │   └── PhysicsWorld # Physics simulation manager
+│   │   ├── RigidBody   # Dynamic body with mass, forces, and velocity
+│   │   ├── PhysicsWorld # Physics simulation manager with sleep system
+│   │   └── SpatialHash  # Broad-phase collision optimization
 │   │
 │   ├── collision/      # Collision detection and resolution
-│   │   ├── AABBCollider  # AABB structure definition
-│   │   ├── Collision     # Collision detection algorithms
-│   │   └── CollisionResolver # Mass-based collision response
+│   │   ├── Collider     # Collider wrapper with material properties
+│   │   ├── AABBCollider # AABB structure definition
+│   │   ├── Collision    # Multi-shape collision detection
+│   │   ├── CollisionManifold # Collision data structure
+│   │   └── CollisionResolver # Impulse-based physics with friction
 │   │
-│   ├── shapes/         # Shape primitives [Coming soon]
+│   ├── shapes/         # Shape primitives
+│   │   ├── Shape       # Base shape interface
+│   │   ├── AABBShape   # Axis-aligned bounding box
+│   │   └── CircleShape # Circle primitive
+│   │
 │   └── core/           # Core utilities (Time, Config)
 │
 ├── platform/           # Platform-specific rendering/windowing
@@ -72,11 +81,14 @@ Ngen2D/
 
 | Component | Purpose | Dependencies |
 |-----------|---------|--------------|
-| **PhysicsWorld** | Manages all physics bodies and simulation stepping | RigidBody |
-| **Collision** | AABB generation and collision detection | RigidBody, AABBCollider |
-| **CollisionResolver** | Mass-based collision response and separation | RigidBody |
-| **SDLApp** | Manages window, renderer, event loop, and drawing | SDL2 |
-| **Sandbox** | Demo scene showcasing physics simulation | PhysicsWorld, RigidBody, Collision |
+| **PhysicsWorld** | Manages physics bodies, simulation stepping, sleep system, and spatial hashing | RigidBody, SpatialHash |
+| **SpatialHash** | Broad-phase collision detection for improved performance | RigidBody |
+| **Collision** | Multi-shape collision detection (AABB, Circle, hybrid) | RigidBody, Shapes, CollisionManifold |
+| **CollisionResolver** | Impulse-based physics with restitution and Coulomb friction | RigidBody, CollisionManifold |
+| **Collider** | Collision wrapper with shape and material properties (friction, restitution) | Shape |
+| **Shape** | Abstract shape interface with AABB and Circle implementations | - |
+| **SDLApp** | Manages window, renderer, event loop, and drawing (rectangles & circles) | SDL2 |
+| **Sandbox** | Interactive demo scene with mouse spawning and mixed shapes | PhysicsWorld, RigidBody, Collider |
 | **PhysicsDemo** | Entry point that wires everything together | engine, platform, demo
 
 ## 📦 Prerequisites
@@ -194,35 +206,60 @@ world.Step(deltaTime);  // Update all bodies
 
 ## 🎯 Usage
 
-### Basic Example (Coming Soon)
+### Running the Demo
+
+The project includes an interactive physics demo. When you run the executable:
+- **Click anywhere** to spawn circular objects with initial horizontal velocity
+- Objects automatically interact with physics (gravity, collisions, friction)
+- Pre-spawned objects include boxes and circles
+- Watch realistic bouncing, rolling, and sleeping behavior
+
+### Creating Physics Objects
 
 ```cpp
+#include "engine/physics/PhysicsWorld.h"
 #include "engine/physics/RigidBody.h"
-#include "platform/SDLApp.h"
+#include "engine/shapes/CircleShape.h"
+#include "engine/shapes/AABBShape.h"
+#include "engine/collision/Collider.h"
 
-int main() {
-    SDLApp app;
-    app.Init();
-    
-    // Create a physics body
-    RigidBody ball(1.0f);  // 1kg mass
-    ball.position = Vector2(400, 300);
-    
-    // Apply gravity
-    Vector2 gravity(0, 9.8f);
-    
-    // Game loop
-    while (app.IsRunning()) {
-        ball.ApplyForce(gravity * ball.mass);
-        ball.Integrate(0.016f);  // ~60 FPS
-        
-        // Render ball at ball.position
-        app.Run();
-    }
-    
-    app.Shutdown();
-    return 0;
-}
+PhysicsWorld world;
+
+// Create a dynamic circle
+RigidBody* ball = new RigidBody(1.0f);  // 1kg mass
+ball->position = Vector2(400, 300);
+ball->velocity = Vector2(200.0f, 0.0f);
+ball->collider = new Collider(new CircleShape(25.0f));  // 25px radius
+ball->collider->restitution = 0.8f;      // Bounciness (0-1)
+ball->collider->dynamicFriction = 0.2f;  // Friction coefficient
+
+world.AddBody(ball);
+
+// Create a static ground (infinite mass)
+RigidBody* ground = new RigidBody(0.0f);  // 0 mass = infinite mass
+ground->position = Vector2(400, 550);
+ground->size = Vector2(800, 50);
+ground->collider = new Collider(new AABBShape(ground->size / 2));
+ground->collider->restitution = 0.5f;
+ground->collider->dynamicFriction = 0.3f;
+
+world.AddBody(ground);
+
+// In your game loop (60 FPS)
+world.Step(1.0f / 60.0f);  // Updates all bodies, handles collisions
+```
+
+### Material Properties
+
+```cpp
+// Bounciness (restitution)
+collider->restitution = 0.0f;  // No bounce (inelastic)
+collider->restitution = 0.5f;  // Medium bounce
+collider->restitution = 1.0f;  // Perfect bounce (elastic)
+
+// Friction
+collider->staticFriction = 0.4f;   // Starting friction
+collider->dynamicFriction = 0.2f;  // Sliding friction
 ```
 
 ## 🛤️ Roadmap
@@ -233,26 +270,30 @@ int main() {
 - [x] Basic SDL2 integration
 - [x] Fix normalize() memory leak
 
-### Phase 2: Collision Handling ✅ (Current)
+### Phase 2: Collision Handling ✅ (Completed)
 - [x] AABB (Axis-Aligned Bounding Box) collision detection
+- [x] Circle collision detection
+- [x] AABB vs Circle hybrid collision
 - [x] Mass-based collision resolution (position correction)
-- [ ] Circle collision
-- [ ] SAT (Separating Axis Theorem) for polygons
-- [ ] Impulse-based collision response (velocity changes)
-- [ ] SAT (Separating Axis Theorem) for polygons
-- [ ] Collision response (impulse-based)
+- [x] Impulse-based collision response (velocity changes)
+- [x] Collision manifold generation
 
-### Phase 3: Shapes & Rendering
-- [ ] Circle primitive
-- [ ] Box primitive
-- [ ] Convex polygon
-- [ ] Debug rendering (wireframe)
+### Phase 3: Shapes & Rendering ✅ (Completed)
+- [x] Circle primitive with radius
+- [x] AABB (Box) primitive with half-size
+- [x] Shape interface with type identification
+- [x] Circle (Bresenham's Midpoint) rendering
+- [x] SDL2 rectangle rendering
 
-### Phase 4: Advanced Features
+### Phase 4: Advanced Features ⚙️ (Current)
+- [x] Material properties (friction, restitution)
+- [x] Spatial hashing for broad-phase collision (O(N) performance)
+- [x] Sleep system for idle bodies
+- [ ] Rotation and angular dynamics
 - [ ] Constraint solving (joints, springs)
-- [ ] Spatial partitioning (Quadtree/Grid)
 - [ ] Continuous collision detection
-- [ ] Material properties (friction, restitution)
+- [ ] SAT for polygon collision
+- [ ] Convex polygon support
 
 ### Phase 5: Optimization & Polish
 - [ ] SIMD vector operations
@@ -277,12 +318,11 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 - Inspired by Box2D and Chipmunk2D
 - SDL2 for cross-platform rendering
-- Game Physics Engine Development by Ian Millington
 
 ## 📞 Contact
 
 **Author**: Zafar  
-**Project**: [Ngen2D](https://github.com/yourusername/Ngen2D)
+**Project**: [Ngen2D](https://github.com/98ZAFAR/Ngen2D)
 
 ---
 

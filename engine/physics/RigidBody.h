@@ -15,6 +15,9 @@ class RigidBody{
     bool isSleeping = false;
     float sleepTime = 0.0f;
 
+    float linearDamping = 0.995f;
+    float angularDamping = 0.995f;
+
     Collider* collider = nullptr;
 
     RigidBody(float m=1.0f);
