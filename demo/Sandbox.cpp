@@ -22,10 +22,14 @@ Sandbox::Sandbox(): box(1.0f), ground(0.0f), ball(1.0f) {
 
     // Box Initialization
     box.position = {200.0f, 100.0f};
+    box.orientation = 0.0f;
     box.velocity = {0.0f, 0.0f};
-    box.size = {50.0f, 50.0f};
+    box.size = {50.0f, 80.0f};
     box.collider = new Collider(new AABBShape(Vector2(box.size/2)));
-    box.collider->restitution = 0.6f; 
+    box.collider->restitution = 0.6f;
+    box.collider->staticFriction = 0.5f;
+    box.collider->dynamicFriction = 0.4f;
+    box.SetInverseInertia(box.collider->shape->GetType());
     world.AddBody(&box);
 
     //Ground Initialization
@@ -37,15 +41,25 @@ Sandbox::Sandbox(): box(1.0f), ground(0.0f), ball(1.0f) {
     ground.collider->dynamicFriction = 0.2f;
     world.AddBody(&ground);
 
-    // Ball Initialization
-    ball.position = {400.0f, 50.0f};
-    ball.velocity = {0.0f, 0.0f};
-    ball.size = {50.0f, 50.0f};
-    ball.collider = new Collider(new CircleShape(ball.size.x / 2));
-    ball.collider->restitution = 0.9f;
-    ball.collider->staticFriction = 0.3f;
-    ball.collider->dynamicFriction = 0.2f;
-    world.AddBody(&ball);
+    //left_Wall Initialization
+    RigidBody* left_wall = new RigidBody(0.0f);
+    left_wall->size = Vector2(50.0f, 750.0f);
+    left_wall->position = Vector2(25.0f, 375.0f);
+    left_wall->collider = new Collider(new AABBShape(Vector2(left_wall->size/2)));
+    left_wall->collider->restitution = 0.6f; 
+    left_wall->collider->staticFriction = 0.3f;
+    left_wall->collider->dynamicFriction = 0.2f;
+    world.AddBody(left_wall);
+
+    //Right_Wall Initialization
+    RigidBody* right_wall = new RigidBody(0.0f);
+    right_wall->size = Vector2(50.0f, 750.0f);
+    right_wall->position = Vector2(1175.0f, 375.0f);
+    right_wall->collider = new Collider(new AABBShape(Vector2(right_wall->size/2)));
+    right_wall->collider->restitution = 0.6f; 
+    right_wall->collider->staticFriction = 0.3f;
+    right_wall->collider->dynamicFriction = 0.2f;
+    world.AddBody(right_wall);
 }
 
 // Update the sandbox state

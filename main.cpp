@@ -13,16 +13,9 @@ int main(int argc, char* argv[]){
 
     while(app.IsRunning()){
         app.HandleEvents(sandbox.GetWorld());
+        
         sandbox.Update();
-
         app.Clear();
-
-        // RigidBody* box = sandbox.GetBox();
-        // app.DrawRect(box->position.x, box->position.y, box->size.x, box->size.y, boxColor);
-        
-        // RigidBody* ground = sandbox.GetGround();
-        // app.DrawRect(ground->position.x, ground->position.y, ground->size.x, ground->size.y, groundColor); // Draw ground
-        
         app.Paint(sandbox.GetWorld());
     }
 

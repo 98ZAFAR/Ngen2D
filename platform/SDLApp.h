@@ -9,10 +9,12 @@ public:
     void Shutdown();
     bool IsRunning() const;
     void HandleEvents(PhysicsWorld &world);
-    void DrawRect(float x, float y, int w, int h, SDL_Color color);
+    void DrawRect(RigidBody body, float x, float y, int w, int h, SDL_Color color);
+    void DrawRotatedRect(float x, float y, int w, int h, float angle, SDL_Color color);
     inline void plotPixel(int x, int y) {SDL_RenderDrawPoint(renderer, x, y);}
 
     void DrawCircle(float x, float y, int radius, SDL_Color color);
+    void DrawCircleWithIndicator(float xc, float yc, int r, float angle, SDL_Color color);
     void Paint(PhysicsWorld &world);
     void Clear();
 

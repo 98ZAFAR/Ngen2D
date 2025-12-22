@@ -4,4 +4,5 @@
 struct CollisionManifold{
     Vector2 normal;
     float penetration;
+    Vector2 contactPoint;
 };

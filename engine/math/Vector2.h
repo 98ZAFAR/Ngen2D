@@ -52,6 +52,10 @@ struct Vector2{
         return x*other.x + y*other.y;
     }
 
+    float cross(const Vector2& other) const{
+        return x*other.y - y*other.x;
+    }
+
     // Calculate squared magnitude (faster, avoids sqrt)
     float lengthSquared() const{
         return x*x + y*y;

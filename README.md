@@ -21,23 +21,27 @@ A lightweight, modular 2D physics engine written in modern C++ with SDL2 renderi
 ## ✨ Features
 
 ### Current Implementation
-- ✅ **2D Vector Mathematics**: Complete vector operations (addition, subtraction, scalar multiplication, dot product, normalization)
-- ✅ **Rigid Body Dynamics**: Position-based physics with force accumulation and Euler integration
-- ✅ **Physics World System**: Centralized physics simulation with body management and sleep optimization
-- ✅ **SDL2 Integration**: Window management, rendering pipeline, event handling with rectangle and circle drawing
-- ✅ **Demo System**: Interactive sandbox demo with mouse-based object spawning
+- ✅ **2D Vector Mathematics**: Complete vector operations (addition, subtraction, scalar multiplication, dot product, cross product, normalization)
+- ✅ **Rigid Body Dynamics**: Full physics simulation with force/torque accumulation, linear/angular velocity, and Euler integration
+- ✅ **Rotation & Angular Dynamics**: Complete angular physics with orientation, angular velocity, torque, and moment of inertia
+- ✅ **Physics World System**: Centralized physics simulation with body management, force generators, and sleep optimization
+- ✅ **SDL2 Integration**: Window management, rendering pipeline, event handling with rotated rectangle and circle drawing
+- ✅ **Demo System**: Interactive sandbox demo with mouse-based object spawning and rotation visualization
 - ✅ **Modular Architecture**: Separated engine logic from platform-specific code
-- ✅ **Multi-Shape Collision Detection**: AABB vs AABB, Circle vs Circle, AABB vs Circle
-- ✅ **Impulse-Based Collision Resolution**: Physically accurate collision response with restitution and velocity changes
-- ✅ **Friction System**: Dynamic and static friction using Coulomb friction model
+- ✅ **Advanced Collision Detection**: 
+  - OBB (Oriented Bounding Box) collision using SAT
+  - Circle vs Circle collision
+  - OBB vs Circle hybrid collision
+  - Proper contact point generation
+- ✅ **Impulse-Based Collision Resolution**: Physically accurate collision response with angular components and restitution
+- ✅ **Advanced Friction System**: Dynamic and static friction using Coulomb friction model with angular friction
 - ✅ **Spatial Hash Optimization**: Broad-phase collision detection using spatial hashing for improved performance
 - ✅ **Sleep System**: Automatic body sleeping for idle objects to reduce CPU usage
 
 ### In Development
-- 🚧 SAT (Separating Axis Theorem) for polygon collision
-- 🚧 Polygon shape primitives
-- 🚧 Constraint solving (joints, springs)
-- 🚧 Rotation and angular dynamics
+- 🚧 Polygon shape primitives (arbitrary convex polygons)
+- 🚧 Constraint solving (joints, springs, motors)
+- 🚧 Continuous collision detection (CCD) for fast-moving objects
 
 ## 🏗️ Architecture
 
@@ -50,21 +54,25 @@ Ngen2D/
 │   │   └── MathUtils   # Utility functions (Clamp, etc.)
 │   │
 │   ├── physics/        # Physics simulation
-│   │   ├── RigidBody   # Dynamic body with mass, forces, and velocity
-│   │   ├── PhysicsWorld # Physics simulation manager with sleep system
+│   │   ├── RigidBody   # Dynamic body with mass, forces, velocity, orientation, angular velocity, torque
+│   │   ├── PhysicsWorld # Physics simulation manager with force generators and sleep system
 │   │   └── SpatialHash  # Broad-phase collision optimization
 │   │
 │   ├── collision/      # Collision detection and resolution
 │   │   ├── Collider     # Collider wrapper with material properties
 │   │   ├── AABBCollider # AABB structure definition
-│   │   ├── Collision    # Multi-shape collision detection
-│   │   ├── CollisionManifold # Collision data structure
-│   │   └── CollisionResolver # Impulse-based physics with friction
+│   │   ├── Collision    # OBB and Circle collision detection using SAT
+│   │   ├── CollisionManifold # Collision data with normal, penetration, contact point
+│   │   └── CollisionResolver # Impulse-based physics with angular components and friction
 │   │
 │   ├── shapes/         # Shape primitives
 │   │   ├── Shape       # Base shape interface
-│   │   ├── AABBShape   # Axis-aligned bounding box
+│   │   ├── AABBShape   # Oriented bounding box (supports rotation)
 │   │   └── CircleShape # Circle primitive
+│   │
+│   ├── forces/         # Force generators
+│   │   ├── ForceGenerator # Base force generator interface
+│   │   └── GravityForce   # Constant gravity force
 │   │
 │   └── core/           # Core utilities (Time, Config)
 │
@@ -107,14 +115,21 @@ sudo apt-get install libsdl2-dev
 **macOS (Homebrew):**
 ```bash
 brew install sdl2
-```:**
-1. Download SDL2 development libraries from [libsdl.org](https://github.com/libsdl-org/SDL/releases)
-2. Extract to `C:\SDL2`
-3. SDL2.dll will be needed alongside the executablebash
+```
+
+**Windows (vcpkg):**
+```bash
 vcpkg install sdl2:x64-windows
 ```
 
-## Linux/macOS
+**Windows (Manual):**
+1. Download SDL2 development libraries from [libsdl.org](https://github.com/libsdl-org/SDL/releases)
+2. Extract to `C:\SDL2`
+3. SDL2.dll will be needed alongside the executable
+
+## 🔨 Building
+
+### Linux/macOS
 
 ```bash
 # Clone the repository
@@ -152,11 +167,11 @@ mingw32-make
 copy C:\SDL2\lib\x86\SDL2.dll .
 
 # Run the demo
-The project includes a working physics demo in the `Sandbox` class. When you run `PhysicsDemo.exe`, you will see:
-- A physics simulation with a box
-- Real-time rendering using SDL2
-- Basic physics world management
+./PhysicsDemo.exe
 ```
+
+## 🎯 Usage
+
 ### Example Code
 
 ```cpp
@@ -204,15 +219,14 @@ ball.ApplyForce(gravity * ball.mass);
 world.Step(deltaTime);  // Update all bodies 
 ```
 
-## 🎯 Usage
-
 ### Running the Demo
 
-The project includes an interactive physics demo. When you run the executable:
+The project includes an interactive physics demo with full rotation support. When you run the executable:
 - **Click anywhere** to spawn circular objects with initial horizontal velocity
-- Objects automatically interact with physics (gravity, collisions, friction)
-- Pre-spawned objects include boxes and circles
-- Watch realistic bouncing, rolling, and sleeping behavior
+- Objects automatically interact with physics (gravity, collisions, friction, rotation)
+- Pre-spawned objects include rotatable boxes and circles
+- Watch realistic bouncing, rolling, spinning, and sleeping behavior
+- Rotation is visualized with red indicator lines showing object orientation
 
 ### Creating Physics Objects
 
@@ -229,16 +243,19 @@ PhysicsWorld world;
 RigidBody* ball = new RigidBody(1.0f);  // 1kg mass
 ball->position = Vector2(400, 300);
 ball->velocity = Vector2(200.0f, 0.0f);
+ball->angularVelocity = 2.0f;  // Initial rotation (rad/s)
 ball->collider = new Collider(new CircleShape(25.0f));  // 25px radius
 ball->collider->restitution = 0.8f;      // Bounciness (0-1)
 ball->collider->dynamicFriction = 0.2f;  // Friction coefficient
+ball->SetInverseInertia(ball->collider->shape->GetType());  // Calculate moment of inertia
 
 world.AddBody(ball);
 
 // Create a static ground (infinite mass)
-RigidBody* ground = new RigidBody(0.0f);  // 0 mass = infinite mass
+RigidBody* ground = new RigidBody(0.0f);  // 0 mass = infinite mass (immovable)
 ground->position = Vector2(400, 550);
 ground->size = Vector2(800, 50);
+ground->orientation = 0.1f;  // Slightly tilted platform
 ground->collider = new Collider(new AABBShape(ground->size / 2));
 ground->collider->restitution = 0.5f;
 ground->collider->dynamicFriction = 0.3f;
@@ -246,7 +263,7 @@ ground->collider->dynamicFriction = 0.3f;
 world.AddBody(ground);
 
 // In your game loop (60 FPS)
-world.Step(1.0f / 60.0f);  // Updates all bodies, handles collisions
+world.Step(1.0f / 60.0f);  // Updates all bodies, handles collisions with rotation
 ```
 
 ### Material Properties
@@ -257,9 +274,33 @@ collider->restitution = 0.0f;  // No bounce (inelastic)
 collider->restitution = 0.5f;  // Medium bounce
 collider->restitution = 1.0f;  // Perfect bounce (elastic)
 
-// Friction
+// Friction (affects both linear and angular motion)
 collider->staticFriction = 0.4f;   // Starting friction
-collider->dynamicFriction = 0.2f;  // Sliding friction
+collider->dynamicFriction = 0.2f;  // Sliding/rolling friction
+```
+
+### Angular Dynamics
+
+```cpp
+// Set initial rotation
+body->orientation = 1.57f;  // 90 degrees in radians
+
+// Apply angular velocity (rad/s)
+body->angularVelocity = 3.0f;  // Spin at 3 rad/s
+
+// Apply torque (for rotational forces)
+body->ApplyTorque(500.0f);
+
+// Apply force at a point (generates both linear force and torque)
+Vector2 force(100, 0);
+Vector2 point(body->position.x + 20, body->position.y);
+body->ApplyForceAtPoint(force, point);
+
+// Configure rotational inertia (must call after setting collider)
+body->SetInverseInertia(body->collider->shape->GetType());
+
+// Angular damping (0.96 = 4% energy loss per frame)
+body->angularDamping = 0.96f;  // Controls rotational slowdown
 ```
 
 ## 🛤️ Roadmap
@@ -285,21 +326,30 @@ collider->dynamicFriction = 0.2f;  // Sliding friction
 - [x] Circle (Bresenham's Midpoint) rendering
 - [x] SDL2 rectangle rendering
 
-### Phase 4: Advanced Features ⚙️ (Current)
+### Phase 4: Rotation & Advanced Physics ✅ (Completed)
+- [x] Full angular dynamics (orientation, angular velocity, torque, inertia)
+- [x] Oriented Bounding Box (OBB) collision using SAT
+- [x] Angular impulse resolution with proper inertia calculations
+- [x] Angular friction and damping
+- [x] Rotation visualization with orientation indicators
+- [x] Contact point generation from penetrating vertices
 - [x] Material properties (friction, restitution)
 - [x] Spatial hashing for broad-phase collision (O(N) performance)
 - [x] Sleep system for idle bodies
-- [ ] Rotation and angular dynamics
-- [ ] Constraint solving (joints, springs)
-- [ ] Continuous collision detection
-- [ ] SAT for polygon collision
-- [ ] Convex polygon support
 
-### Phase 5: Optimization & Polish
-- [ ] SIMD vector operations
-- [ ] Multi-threading support
-- [ ] Profiling tools
-- [ ] Extensive unit tests
+### Phase 5: Advanced Features ⚙️ (Current)
+- [ ] Constraint solving (joints, springs, motors)
+- [ ] Continuous collision detection (CCD) for fast-moving objects
+- [ ] Convex polygon support with arbitrary vertices
+- [ ] Advanced spatial partitioning (QuadTree/BVH)
+- [ ] One-way platforms and collision filtering
+
+### Phase 6: Optimization & Polish
+- [ ] SIMD vector operations for performance
+- [ ] Multi-threading support for parallel collision detection
+- [ ] Profiling tools and performance metrics
+- [ ] Extensive unit tests and benchmarks
+- [ ] Debug visualization modes
 
 ## 🤝 Contributing
 
