@@ -1,8 +1,8 @@
 #include "SDLApp.h"
 #include "../engine/core/Config.h"
-#include <iostream>
 #include "../engine/shapes/AABBShape.h"
 #include "../engine/shapes/CircleShape.h"
+#include "../engine/collision/Collider.h"
 
 bool SDLApp::Init()
 {
@@ -49,20 +49,18 @@ void SDLApp::HandleEvents(PhysicsWorld &world)
             float mouseX = static_cast<float>(event.button.x);
             float mouseY = static_cast<float>(event.button.y);
 
-            std::cout << "Mouse Clicked at: (" << mouseX << ", " << mouseY << ")\n";
-            RigidBody *entity = new RigidBody(1.0f);
+            auto entity = std::make_unique<RigidBody>(1.0f);
             entity->position = Vector2(mouseX, mouseY);
             entity->size = Vector2(30.0f, 30.0f);
 
-            // entity->collider = new Collider(new AABBShape(entity->size/2));
-            entity->collider = new Collider(new CircleShape(entity->size.x / 2));
-            entity->collider->restitution = 0.9f; // Set some bounciness
+            entity->collider = std::make_unique<Collider>(std::make_unique<CircleShape>(entity->size.x / 2));
+            entity->collider->restitution = 0.9f;
             entity->collider->staticFriction = 0.2f;
             entity->collider->dynamicFriction = 0.1f;
             entity->velocity = Vector2(400.0f, 0.0f);
             entity->SetInverseInertia(entity->collider->shape->GetType());
 
-            world.AddBody(entity);
+            world.AddBody(std::move(entity));
         }
     }
 }
@@ -73,7 +71,7 @@ void SDLApp::Clear()
     SDL_RenderClear(renderer);
 }
 
-void SDLApp::DrawRect(RigidBody body, float x, float y, int w, int h, SDL_Color color)
+void SDLApp::DrawRect(const RigidBody& body, float x, float y, int w, int h, SDL_Color color)
 {
     DrawRotatedRect(x, y, w, h, body.orientation * 180.0f / M_PI, color);
 }
@@ -106,10 +104,6 @@ void SDLApp::DrawRotatedRect(float x, float y, int w, int h, float angle, SDL_Co
     SDL_RenderDrawLine(renderer, corners[1].x, corners[1].y, corners[2].x, corners[2].y);
     SDL_RenderDrawLine(renderer, corners[2].x, corners[2].y, corners[3].x, corners[3].y);
     SDL_RenderDrawLine(renderer, corners[3].x, corners[3].y, corners[0].x, corners[0].y);
-    
-    // // Draw diagonal for orientation indicator
-    // SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-    // SDL_RenderDrawLine(renderer, static_cast<int>(x), static_cast<int>(y), corners[1].x, corners[1].y);
 }
 
 void SDLApp::DrawCircle(float xc, float yc, int r, SDL_Color color)
@@ -167,11 +161,11 @@ void SDLApp::Paint(PhysicsWorld &world)
         if (!body->collider)
             continue;
 
-        if (body->collider->shape->GetType() == ShapeType::AABB)
+        if (body->collider->shape->GetType() == ShapeType::AABB){
             DrawRect(*body, body->position.x, body->position.y, static_cast<int>(body->size.x), static_cast<int>(body->size.y), {255, 255, 255, 255});
-        else if (body->collider->shape->GetType() == ShapeType::Circle)
+        } else if (body->collider->shape->GetType() == ShapeType::Circle)
         {
-            auto *circle = static_cast<CircleShape *>(body->collider->shape);
+            auto *circle = static_cast<CircleShape *>(body->collider->shape.get());
             DrawCircleWithIndicator(body->position.x, body->position.y, static_cast<int>(circle->radius), body->orientation, {255, 255, 255, 255});
         }
     }

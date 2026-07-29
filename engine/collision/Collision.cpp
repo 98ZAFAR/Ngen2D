@@ -3,15 +3,6 @@
 #include "../math/MathUtils.h"
 #include <vector>
 
-// Get the Axis-Aligned Bounding Box for a RigidBody with an AABBShape
-AABB Collision::GetAABB(const RigidBody &body, const AABBShape &shape)
-{
-    AABB aabb;
-    aabb.min = body.position - shape.halfsize;
-    aabb.max = body.position + shape.halfsize;
-    return aabb;
-}
-
 // Get the 4 corners of an Oriented Bounding Box
 void Collision::GetOBBCorners(const RigidBody& body, const AABBShape& shape, Vector2 corners[4])
 {
@@ -56,8 +47,8 @@ float Collision::ProjectOntoAxis(const Vector2 corners[], int numCorners, const 
 // Check collision between two Oriented Bounding Boxes using SAT
 bool Collision::OBBvsOBB(const RigidBody &a, const RigidBody &b, CollisionManifold& manifold)
 {
-    AABBShape *shapeA = static_cast<AABBShape *>(a.collider->shape);
-    AABBShape *shapeB = static_cast<AABBShape *>(b.collider->shape);
+    AABBShape *shapeA = static_cast<AABBShape *>(a.collider->shape.get());
+    AABBShape *shapeB = static_cast<AABBShape *>(b.collider->shape.get());
     
     // Get corners of both OBBs
     Vector2 cornersA[4], cornersB[4];
@@ -81,6 +72,7 @@ bool Collision::OBBvsOBB(const RigidBody &a, const RigidBody &b, CollisionManifo
     
     float minOverlap = FLT_MAX;
     Vector2 smallestAxis;
+    bool axisFromA = false;
     
     // Test all axes using SAT
     for (int i = 0; i < 4; i++)
@@ -100,6 +92,7 @@ bool Collision::OBBvsOBB(const RigidBody &a, const RigidBody &b, CollisionManifo
         {
             minOverlap = overlap;
             smallestAxis = axes[i];
+            axisFromA = (i < 2);
             
             // Make sure normal points from A to B
             Vector2 centerDiff = b.position - a.position;
@@ -112,96 +105,71 @@ bool Collision::OBBvsOBB(const RigidBody &a, const RigidBody &b, CollisionManifo
     manifold.normal = smallestAxis;
     manifold.penetration = minOverlap;
     
-    // Find contact points: vertices of one box that are inside the other box
-    std::vector<Vector2> contactPoints;
-    
-    // Check vertices of B that are "inside" A (behind the collision normal)
-    for (int i = 0; i < 4; i++)
+    // Find contact point by finding the deepest vertex
+    if (axisFromA)
     {
-        // Project B's corner onto the collision normal from A's center
-        Vector2 diff = cornersB[i] - a.position;
-        float projection = diff.dot(manifold.normal);
+        // Axis from A, so B's vertex is hitting A's face.
+        // Find deepest vertex of B along -normal (minimum dot product with normal)
+        float minProj = FLT_MAX;
+        std::vector<Vector2> supports;
         
-        // If the projection is positive and within the penetration depth, it's a contact point
-        if (projection > 0 && projection <= minOverlap + 0.1f)
+        for (int i = 0; i < 4; i++)
         {
-            contactPoints.push_back(cornersB[i]);
+            float proj = cornersB[i].dot(manifold.normal);
+            if (proj < minProj - 0.01f)
+            {
+                minProj = proj;
+                supports.clear();
+                supports.push_back(cornersB[i]);
+            }
+            else if (std::abs(proj - minProj) <= 0.01f)
+            {
+                supports.push_back(cornersB[i]);
+            }
         }
-    }
-    
-    // Check vertices of A that are "inside" B (ahead of the collision normal)
-    for (int i = 0; i < 4; i++)
-    {
-        Vector2 diff = cornersA[i] - b.position;
-        float projection = diff.dot(manifold.normal);
         
-        // If the projection is negative and within the penetration depth, it's a contact point
-        if (projection < 0 && std::abs(projection) <= minOverlap + 0.1f)
-        {
-            contactPoints.push_back(cornersA[i]);
+        if (supports.size() == 1) {
+            manifold.contactCount = 1;
+            manifold.contactPoints[0] = supports[0];
+        } else if (supports.size() >= 2) {
+            manifold.contactCount = 2;
+            manifold.contactPoints[0] = supports[0];
+            manifold.contactPoints[1] = supports[1];
         }
-    }
-    
-    // Use average of contact points, or center between objects if none found
-    if (contactPoints.size() > 0)
-    {
-        Vector2 avgContact(0, 0);
-        for (const auto& point : contactPoints)
-        {
-            avgContact = avgContact + point;
-        }
-        manifold.contactPoint = avgContact / static_cast<float>(contactPoints.size());
     }
     else
     {
-        // Fallback: contact at the midpoint between centers projected onto collision normal
-        manifold.contactPoint = a.position + manifold.normal * (shapeA->halfsize.x + shapeA->halfsize.y) * 0.5f;
+        // Axis from B, so A's vertex is hitting B's face.
+        // Find deepest vertex of A along normal (maximum dot product with normal)
+        float maxProj = -FLT_MAX;
+        std::vector<Vector2> supports;
+        
+        for (int i = 0; i < 4; i++)
+        {
+            float proj = cornersA[i].dot(manifold.normal);
+            if (proj > maxProj + 0.01f)
+            {
+                maxProj = proj;
+                supports.clear();
+                supports.push_back(cornersA[i]);
+            }
+            else if (std::abs(proj - maxProj) <= 0.01f)
+            {
+                supports.push_back(cornersA[i]);
+            }
+        }
+        
+        if (supports.size() == 1) {
+            manifold.contactCount = 1;
+            manifold.contactPoints[0] = supports[0];
+        } else if (supports.size() >= 2) {
+            manifold.contactCount = 2;
+            manifold.contactPoints[0] = supports[0];
+            manifold.contactPoints[1] = supports[1];
+        }
     }
     
     return true;
-}
-
-// Check collision between two AABBs
-bool Collision::AABBvsAABB(const RigidBody &a, const RigidBody &b, CollisionManifold& manifold)
-{
-    // ---- early out ----
-    Vector2 delta = b.position - a.position;
-
-    AABBShape *shapeA = static_cast<AABBShape *>(a.collider->shape);
-    AABBShape *shapeB = static_cast<AABBShape *>(b.collider->shape);
-
-    float overlapX = (shapeA->halfsize.x + shapeB->halfsize.x) - std::abs(delta.x);
-    float overlapY = (shapeA->halfsize.y + shapeB->halfsize.y) - std::abs(delta.y);
-
-    if (overlapX <= 0.0f || overlapY <= 0.0f)
-        return false;
-
-    // ---- collision normal ----
-
-    if (overlapX < overlapY)
-    {
-        manifold.normal = {(delta.x < 0) ? -1.0f : 1.0f, 0.0f};
-        manifold.penetration = overlapX;
-        // Contact point on the edge between the two boxes
-        float contactX = (delta.x < 0) ? (a.position.x - shapeA->halfsize.x) : (a.position.x + shapeA->halfsize.x);
-        float contactY = a.position.y + Clamp(delta.y, -shapeA->halfsize.y, shapeA->halfsize.y);
-        manifold.contactPoint = Vector2(contactX, contactY);
-    }
-    else
-    {
-        manifold.normal = {0.0f, (delta.y < 0) ? -1.0f : 1.0f};
-        manifold.penetration = overlapY;
-        // Contact point on the edge between the two boxes
-        float contactX = a.position.x + Clamp(delta.x, -shapeA->halfsize.x, shapeA->halfsize.x);
-        float contactY = (delta.y < 0) ? (a.position.y - shapeA->halfsize.y) : (a.position.y + shapeA->halfsize.y);
-        manifold.contactPoint = Vector2(contactX, contactY);
-    }
-
-    AABB aabbA = GetAABB(a, *shapeA);
-    AABB aabbB = GetAABB(b, *shapeB);
-    // Check for overlap on x and y axes
-    return (aabbA.min.x <= aabbB.max.x && aabbA.max.x >= aabbB.min.x) &&
-           (aabbA.min.y <= aabbB.max.y && aabbA.max.y >= aabbB.min.y);
 }
 
 // Check collision between two circles
@@ -227,7 +195,8 @@ bool Collision::CirclevsCircle(const RigidBody &a,
 
     manifold.penetration = radiiSum - dist;
     // Contact point is on the surface of circle A along the collision normal
-    manifold.contactPoint = a.position + manifold.normal * shapeA.radius;
+    manifold.contactCount = 1;
+    manifold.contactPoints[0] = a.position + manifold.normal * shapeA.radius;
     return true;
 }
 
@@ -271,7 +240,8 @@ bool Collision::AABBvsCircle(const RigidBody &a,
 
     manifold.penetration = shapeB.radius - distance;
     // Contact point is the closest point on the AABB to the circle
-    manifold.contactPoint = closest;
+    manifold.contactCount = 1;
+    manifold.contactPoints[0] = closest;
     return true;
 }
 
@@ -334,58 +304,56 @@ bool Collision::OBBvsCircle(const RigidBody& a,
     }
     
     manifold.penetration = shapeB.radius - distance;
-    manifold.contactPoint = closest;
+    manifold.contactCount = 1;
+    manifold.contactPoints[0] = closest;
     
     return true;
 }
 
 // Main collision checking function
-void Collision::CheckCollision(RigidBody &a, RigidBody &b)
+bool Collision::CheckCollision(RigidBody &a, RigidBody &b, CollisionManifold& outManifold)
 {
     ShapeType typeA = a.collider ? a.collider->shape->GetType() : ShapeType::AABB;
     ShapeType typeB = b.collider ? b.collider->shape->GetType() : ShapeType::AABB;
 
+    bool hit = false;
     if (typeA == ShapeType::AABB && typeB == ShapeType::AABB)
     {   
-        CollisionManifold m;
         // Use OBB collision for rotated boxes
-        if (OBBvsOBB(a, b, m))
-        {
-            CollisionResolver::Resolve(a, b, m);
-        }
+        hit = OBBvsOBB(a, b, outManifold);
     }
     else if (typeA == ShapeType::Circle && typeB == ShapeType::Circle)
     {
-        auto *shapeA = static_cast<CircleShape *>(a.collider->shape);
-        auto *shapeB = static_cast<CircleShape *>(b.collider->shape);
+        auto *shapeA = static_cast<CircleShape *>(a.collider->shape.get());
+        auto *shapeB = static_cast<CircleShape *>(b.collider->shape.get());
 
-        CollisionManifold manifold;
-        if (CirclevsCircle(a, b, *shapeA, *shapeB, manifold))
-        {
-            CollisionResolver::Resolve(a, b, manifold);
-        }
+        hit = CirclevsCircle(a, b, *shapeA, *shapeB, outManifold);
     }
     else if (typeA == ShapeType::Circle && typeB == ShapeType::AABB)
     {
-        auto *circle = static_cast<CircleShape *>(a.collider->shape);
-        auto *box = static_cast<AABBShape *>(b.collider->shape);
+        auto *circle = static_cast<CircleShape *>(a.collider->shape.get());
+        auto *box = static_cast<AABBShape *>(b.collider->shape.get());
 
-        CollisionManifold m;
         // Use OBB collision for rotated boxes
-        if (OBBvsCircle(b, a, *box, *circle, m))
+        if (OBBvsCircle(b, a, *box, *circle, outManifold))
         {
-            m.normal = m.normal * -1.0f;
-            CollisionResolver::Resolve(a, b, m);
+            outManifold.normal = outManifold.normal * -1.0f;
+            hit = true;
         }
     }
     else if (typeA == ShapeType::AABB && typeB == ShapeType::Circle)
     {
-        auto *box = static_cast<AABBShape *>(a.collider->shape);
-        auto *circle = static_cast<CircleShape *>(b.collider->shape);
+        auto *box = static_cast<AABBShape *>(a.collider->shape.get());
+        auto *circle = static_cast<CircleShape *>(b.collider->shape.get());
 
-        CollisionManifold m;
         // Use OBB collision for rotated boxes
-        if (OBBvsCircle(a, b, *box, *circle, m))
-            CollisionResolver::Resolve(a, b, m);
+        hit = OBBvsCircle(a, b, *box, *circle, outManifold);
     }
+
+    if (hit)
+    {
+        outManifold.bodyA = &a;
+        outManifold.bodyB = &b;
+    }
+    return hit;
 }

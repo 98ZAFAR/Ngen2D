@@ -33,7 +33,7 @@ public:
         }
     }
 
-    std::vector<std::pair<int, int>> GetPotentialCollisions(const std::vector<RigidBody*>& bodies) {
+    std::vector<std::pair<int, int>> GetPotentialCollisions() {
         std::vector<std::pair<int, int>> pairs;
         
         for (auto& [key, indices] : grid) {
@@ -70,11 +70,11 @@ private:
         
         if (body->collider && body->collider->shape) {
             if (body->collider->shape->GetType() == ShapeType::AABB) {
-                auto* shape = static_cast<AABBShape*>(body->collider->shape);
+                auto* shape = static_cast<AABBShape*>(body->collider->shape.get());
                 aabb.min = body->position - shape->halfsize;
                 aabb.max = body->position + shape->halfsize;
             } else if (body->collider->shape->GetType() == ShapeType::Circle) {
-                auto* shape = static_cast<CircleShape*>(body->collider->shape);
+                auto* shape = static_cast<CircleShape*>(body->collider->shape.get());
                 Vector2 radius(shape->radius, shape->radius);
                 aabb.min = body->position - radius;
                 aabb.max = body->position + radius;

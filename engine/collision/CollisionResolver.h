@@ -4,5 +4,6 @@
 
 class CollisionResolver{
     public:
-        static void Resolve(RigidBody &a, RigidBody &b, const CollisionManifold& manifold);
+        static void ResolveVelocity(const CollisionManifold& manifold);
+        static void ResolvePosition(const CollisionManifold& manifold);
 };

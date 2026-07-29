@@ -6,60 +6,61 @@
 #include "../engine/collision/Collider.h"
 #include "../engine/forces/GravityForce.h"
 
-#include <iostream>
-#include <thread>
 #include <chrono>
 
-// Initialize the sandbox with a box, ground and ball
-Sandbox::Sandbox(): box(1.0f), ground(0.0f), ball(1.0f) {
+// Initialize the sandbox with a box, ground and walls
+Sandbox::Sandbox() {
     //Gravity Initialization
-    GravityForce* gravity = new GravityForce(Vector2(0.0f, Config::GRAVITY));
-    world.AddForceGenerator(gravity);
+    auto gravity = std::make_unique<GravityForce>(Vector2(0.0f, Config::GRAVITY));
+    world.AddForceGenerator(std::move(gravity));
 
     // Initialize timing
     lastTime = std::chrono::high_resolution_clock::now();
 
-
     // Box Initialization
-    box.position = {200.0f, 100.0f};
-    box.orientation = 0.0f;
-    box.velocity = {0.0f, 0.0f};
-    box.size = {50.0f, 80.0f};
-    box.collider = new Collider(new AABBShape(Vector2(box.size/2)));
-    box.collider->restitution = 0.6f;
-    box.collider->staticFriction = 0.5f;
-    box.collider->dynamicFriction = 0.4f;
-    box.SetInverseInertia(box.collider->shape->GetType());
-    world.AddBody(&box);
+    auto boxBody = std::make_unique<RigidBody>(1.0f);
+    boxBody->position = {200.0f, 100.0f};
+    boxBody->orientation = 1.0f;
+    boxBody->velocity = {0.0f, 0.0f};
+    boxBody->size = {50.0f, 80.0f};
+    boxBody->collider = std::make_unique<Collider>(std::make_unique<AABBShape>(Vector2(boxBody->size/2)));
+    boxBody->collider->restitution = 0.6f;
+    boxBody->collider->staticFriction = 0.5f;
+    boxBody->collider->dynamicFriction = 0.4f;
+    boxBody->SetInverseInertia(boxBody->collider->shape->GetType());
+    box = boxBody.get();
+    world.AddBody(std::move(boxBody));
 
     //Ground Initialization
-    ground.position = {600.0f, 775.0f};
-    ground.size = {1200.0f, 50.0f};
-    ground.collider = new Collider(new AABBShape(Vector2(ground.size/2)));
-    ground.collider->restitution = 0.6f; 
-    ground.collider->staticFriction = 0.3f;
-    ground.collider->dynamicFriction = 0.2f;
-    world.AddBody(&ground);
+    auto groundBody = std::make_unique<RigidBody>(0.0f);
+    groundBody->position = {600.0f, 775.0f};
+    groundBody->size = {1200.0f, 50.0f};
+    groundBody->collider = std::make_unique<Collider>(std::make_unique<AABBShape>(Vector2(groundBody->size/2)));
+    groundBody->collider->restitution = 0.6f; 
+    groundBody->collider->staticFriction = 0.3f;
+    groundBody->collider->dynamicFriction = 0.2f;
+    ground = groundBody.get();
+    world.AddBody(std::move(groundBody));
 
     //left_Wall Initialization
-    RigidBody* left_wall = new RigidBody(0.0f);
+    auto left_wall = std::make_unique<RigidBody>(0.0f);
     left_wall->size = Vector2(50.0f, 750.0f);
     left_wall->position = Vector2(25.0f, 375.0f);
-    left_wall->collider = new Collider(new AABBShape(Vector2(left_wall->size/2)));
+    left_wall->collider = std::make_unique<Collider>(std::make_unique<AABBShape>(Vector2(left_wall->size/2)));
     left_wall->collider->restitution = 0.6f; 
     left_wall->collider->staticFriction = 0.3f;
     left_wall->collider->dynamicFriction = 0.2f;
-    world.AddBody(left_wall);
+    world.AddBody(std::move(left_wall));
 
     //Right_Wall Initialization
-    RigidBody* right_wall = new RigidBody(0.0f);
+    auto right_wall = std::make_unique<RigidBody>(0.0f);
     right_wall->size = Vector2(50.0f, 750.0f);
     right_wall->position = Vector2(1175.0f, 375.0f);
-    right_wall->collider = new Collider(new AABBShape(Vector2(right_wall->size/2)));
+    right_wall->collider = std::make_unique<Collider>(std::make_unique<AABBShape>(Vector2(right_wall->size/2)));
     right_wall->collider->restitution = 0.6f; 
     right_wall->collider->staticFriction = 0.3f;
     right_wall->collider->dynamicFriction = 0.2f;
-    world.AddBody(right_wall);
+    world.AddBody(std::move(right_wall));
 }
 
 // Update the sandbox state

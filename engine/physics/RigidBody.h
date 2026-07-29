@@ -1,6 +1,7 @@
 #pragma once
 #include "../math/Vector2.h"
 #include "../collision/Collider.h"
+#include <memory>
 
 class RigidBody{
     public:
@@ -23,7 +24,7 @@ class RigidBody{
     float linearDamping = 0.995f;
     float angularDamping = 0.96f; // Stronger damping to stop spinning faster
 
-    Collider* collider = nullptr;
+    std::unique_ptr<Collider> collider;
 
     RigidBody(float m=1.0f);
 

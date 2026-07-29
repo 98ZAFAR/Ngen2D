@@ -18,25 +18,28 @@ void RigidBody::Integrate(float deltaTime){
     if(inverseMass<=0.0f) return;
 
     if(isSleeping) return;
-    
-    // Apply air damping
-    velocity *= linearDamping;
-    angularVelocity *= angularDamping;
 
-    //Update angular velocity
+    //Update angular velocity from torque
     float angularAcceleration = torque * inverseInertia;
     angularVelocity += angularAcceleration * deltaTime;
+
+    // Apply angular damping after acceleration
+    angularVelocity *= angularDamping;
     
     // Clamp small angular velocities to zero
-    const float angularEpsilon = 0.05f; // Increased threshold
+    const float angularEpsilon = 0.05f;
     if (std::abs(angularVelocity) < angularEpsilon)
         angularVelocity = 0.0f;
     
     orientation += angularVelocity * deltaTime;
 
-    // Update velocity
+    // Update velocity from forces
     Vector2 acceleration = force * inverseMass;
     velocity += acceleration * deltaTime;
+
+    // Apply linear damping after acceleration
+    velocity *= linearDamping;
+
     position += velocity * deltaTime;
     // Clear force
     ClearForces();
@@ -62,7 +65,7 @@ void RigidBody::ApplyForceAtPoint(const Vector2& f, const Vector2& point){
 
 void RigidBody::SetInverseInertia(ShapeType type){
     if(type == ShapeType::Circle){
-        auto* circle = static_cast<CircleShape*>(collider->shape);
+        auto* circle = static_cast<CircleShape*>(collider->shape.get());
         float I = 0.5f * mass * circle->radius * circle->radius;
         if(I > 0)
             inverseInertia = 1.0f / I;

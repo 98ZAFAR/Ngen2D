@@ -19,6 +19,7 @@ struct Vector2{
         return Vector2(x*scalar, y*scalar);
     }
     Vector2 operator/(float scalar) const{
+        if(std::abs(scalar) < 0.00001f) return Vector2(0, 0);
         return Vector2(x/scalar, y/scalar);
     }
     Vector2& operator+=(const Vector2& other){
@@ -41,6 +42,7 @@ struct Vector2{
         return *this;
     }
     Vector2& operator/=(float scalar){
+        if(std::abs(scalar) < 0.00001f) { x = 0; y = 0; return *this; }
         x/=scalar;
         y/=scalar;
 

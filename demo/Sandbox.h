@@ -6,15 +6,13 @@ class Sandbox{
     public:
         Sandbox();
         void Update();
-        RigidBody* GetBox() { return &box; };
-        RigidBody* GetGround() { return &ground; };
+        RigidBody* GetBox() { return box; };
+        RigidBody* GetGround() { return ground; };
         PhysicsWorld& GetWorld() { return world; }
     private:
-        // Sandbox specific data and methods would go here
         PhysicsWorld world;
-        RigidBody box;
-        RigidBody ball;
-        RigidBody ground;
+        RigidBody* box = nullptr;      // non-owning, world owns the body
+        RigidBody* ground = nullptr;   // non-owning, world owns the body
         
         // Fixed timestep variables
         float accumulator = 0.0f;

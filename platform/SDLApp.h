@@ -9,7 +9,7 @@ public:
     void Shutdown();
     bool IsRunning() const;
     void HandleEvents(PhysicsWorld &world);
-    void DrawRect(RigidBody body, float x, float y, int w, int h, SDL_Color color);
+    void DrawRect(const RigidBody& body, float x, float y, int w, int h, SDL_Color color);
     void DrawRotatedRect(float x, float y, int w, int h, float angle, SDL_Color color);
     inline void plotPixel(int x, int y) {SDL_RenderDrawPoint(renderer, x, y);}
 
